@@ -1,0 +1,8 @@
+crewai==0.30.11
+crewai-tools==0.2.6
+streamlit==1.36.0
+duckduckgo-search==6.2.15
+requests==2.32.3
+beautifulsoup4==4.12.3
+PyPDF2==3.0.1
+python-dotenv==1.0.1
