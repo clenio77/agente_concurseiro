@@ -11,6 +11,9 @@ build/
 
 # Environment variables
 .env
+.env.local
+.env.development
+.env.production
 
 # IDE files
 .idea/
@@ -20,7 +23,43 @@ build/
 
 # Logs
 *.log
+logs/
+log/
 
 # OS specific files
 .DS_Store
 Thumbs.db
+
+# Project specific
+data/user_data/
+data/study_plans/
+data/performance/
+data/quiz_results/
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# Temporary files
+tmp/
+temp/
+.temp/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Model files and large data
+*.pkl
+*.h5
+*.model
+*.bin
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
