@@ -1,0 +1,253 @@
+{
+  "progress_summary": {
+    "completed_weeks": 4,
+    "total_weeks": 24,
+    "completion_percentage": 16.7,
+    "current_phase": "Base Teórica",
+    "next_milestone": "Início da fase de exercícios",
+    "days_until_exam": 168,
+    "total_study_hours": 80,
+    "weekly_goal_hours": 20,
+    "current_week_hours": 12
+  },
+  "subject_progress": {
+    "Português": {
+      "completion": 25,
+      "priority": "Alta",
+      "hours_planned": 120,
+      "hours_completed": 30,
+      "last_score": 78,
+      "trend": "improving",
+      "next_topic": "Concordância Verbal"
+    },
+    "Matemática": {
+      "completion": 15,
+      "priority": "Média",
+      "hours_planned": 96,
+      "hours_completed": 14,
+      "last_score": 65,
+      "trend": "stable",
+      "next_topic": "Equações do 2º grau"
+    },
+    "Direito Constitucional": {
+      "completion": 20,
+      "priority": "Muito Alta",
+      "hours_planned": 144,
+      "hours_completed": 29,
+      "last_score": 82,
+      "trend": "improving",
+      "next_topic": "Direitos Fundamentais"
+    },
+    "Direito Administrativo": {
+      "completion": 10,
+      "priority": "Alta",
+      "hours_planned": 120,
+      "hours_completed": 12,
+      "last_score": 70,
+      "trend": "stable",
+      "next_topic": "Princípios da Administração"
+    },
+    "Informática": {
+      "completion": 30,
+      "priority": "Baixa",
+      "hours_planned": 48,
+      "hours_completed": 14,
+      "last_score": 85,
+      "trend": "improving",
+      "next_topic": "Redes de Computadores"
+    },
+    "Conhecimentos Específicos": {
+      "completion": 8,
+      "priority": "Muito Alta",
+      "hours_planned": 168,
+      "hours_completed": 13,
+      "last_score": 60,
+      "trend": "needs_attention",
+      "next_topic": "Legislação Específica"
+    }
+  },
+  "upcoming_activities": [
+    {
+      "date": "2024-01-16",
+      "week": 5,
+      "activity": {
+        "type": "Estudo",
+        "description": "Revisão de Concordância Verbal - Português",
+        "duration": "3 horas",
+        "priority": "Alta",
+        "status": "pending"
+      }
+    },
+    {
+      "date": "2024-01-17",
+      "week": 5,
+      "activity": {
+        "type": "Exercícios",
+        "description": "Questões de Direito Constitucional - CESPE",
+        "duration": "2 horas",
+        "priority": "Muito Alta",
+        "status": "pending"
+      }
+    },
+    {
+      "date": "2024-01-18",
+      "week": 5,
+      "activity": {
+        "type": "Simulado",
+        "description": "Simulado Parcial - Português e Direito",
+        "duration": "2.5 horas",
+        "priority": "Alta",
+        "status": "scheduled"
+      }
+    },
+    {
+      "date": "2024-01-19",
+      "week": 5,
+      "activity": {
+        "type": "Redação",
+        "description": "Prática de redação - Tema: Educação Digital",
+        "duration": "1.5 horas",
+        "priority": "Média",
+        "status": "pending"
+      }
+    },
+    {
+      "date": "2024-01-20",
+      "week": 5,
+      "activity": {
+        "type": "Revisão",
+        "description": "Revisão espaçada - Flashcards de Matemática",
+        "duration": "1 hora",
+        "priority": "Média",
+        "status": "pending"
+      }
+    }
+  ],
+  "performance_metrics": {
+    "mock_exam_scores": [
+      {"date": "2024-01-01", "score": 58, "subjects": {"Português": 65, "Matemática": 50, "Direito": 60}},
+      {"date": "2024-01-08", "score": 65, "subjects": {"Português": 70, "Matemática": 55, "Direito": 70}},
+      {"date": "2024-01-15", "score": 72, "subjects": {"Português": 78, "Matemática": 65, "Direito": 75}}
+    ],
+    "writing_scores": [
+      {"date": "2024-01-03", "score": 6.5, "criteria": {"estrutura": 7, "argumentacao": 6, "gramatica": 7}},
+      {"date": "2024-01-10", "score": 7.2, "criteria": {"estrutura": 8, "argumentacao": 7, "gramatica": 7}},
+      {"date": "2024-01-17", "score": 7.8, "criteria": {"estrutura": 8, "argumentacao": 8, "gramatica": 8}}
+    ],
+    "daily_quiz_scores": [
+      {"date": "2024-01-12", "score": 80, "questions": 10, "time_minutes": 15},
+      {"date": "2024-01-13", "score": 75, "questions": 10, "time_minutes": 18},
+      {"date": "2024-01-14", "score": 85, "questions": 10, "time_minutes": 12},
+      {"date": "2024-01-15", "score": 90, "questions": 10, "time_minutes": 14}
+    ],
+    "questions_accuracy": 76,
+    "average_study_time_per_day": 3.2,
+    "consistency_score": 85,
+    "improvement_rate": 12.5
+  },
+  "achievements": [
+    {
+      "id": "first_week",
+      "title": "Primeira Semana Completa",
+      "description": "Completou sua primeira semana de estudos",
+      "icon": "🎯",
+      "earned_date": "2024-01-07",
+      "points": 100
+    },
+    {
+      "id": "quiz_streak_7",
+      "title": "Sequência de Quiz",
+      "description": "Completou quiz diário por 7 dias consecutivos",
+      "icon": "🔥",
+      "earned_date": "2024-01-14",
+      "points": 200
+    },
+    {
+      "id": "score_improvement",
+      "title": "Melhoria Consistente",
+      "description": "Melhorou pontuação em 3 simulados consecutivos",
+      "icon": "📈",
+      "earned_date": "2024-01-15",
+      "points": 300
+    }
+  ],
+  "recommendations": [
+    {
+      "type": "study_focus",
+      "priority": "high",
+      "title": "Foque em Conhecimentos Específicos",
+      "description": "Sua pontuação em Conhecimentos Específicos está abaixo da meta. Dedique mais tempo a esta matéria.",
+      "action": "Aumentar 2 horas semanais de estudo",
+      "estimated_impact": "Melhoria de 15-20 pontos"
+    },
+    {
+      "type": "schedule_optimization",
+      "priority": "medium",
+      "title": "Otimize seu Horário de Estudo",
+      "description": "Você tem melhor desempenho estudando pela manhã. Considere reorganizar seu cronograma.",
+      "action": "Mover estudos pesados para manhã",
+      "estimated_impact": "Melhoria de 10% na retenção"
+    },
+    {
+      "type": "technique",
+      "priority": "medium",
+      "title": "Use Mais Flashcards",
+      "description": "Flashcards podem ajudar na memorização de conceitos de Direito.",
+      "action": "Criar 20 flashcards por semana",
+      "estimated_impact": "Melhoria na retenção de longo prazo"
+    }
+  ],
+  "study_streak": {
+    "current_streak": 12,
+    "longest_streak": 15,
+    "total_study_days": 28,
+    "last_study_date": "2024-01-15"
+  },
+  "goals": {
+    "weekly_hours": {
+      "target": 20,
+      "current": 12,
+      "percentage": 60
+    },
+    "monthly_simulados": {
+      "target": 4,
+      "current": 3,
+      "percentage": 75
+    },
+    "target_score": {
+      "overall": 80,
+      "current_average": 72,
+      "gap": 8
+    }
+  },
+  "next_milestones": [
+    {
+      "title": "Completar Fase Teórica",
+      "description": "Finalizar estudo de todos os tópicos básicos",
+      "target_date": "2024-02-15",
+      "progress": 67,
+      "estimated_completion": "2024-02-18"
+    },
+    {
+      "title": "Atingir 80% nos Simulados",
+      "description": "Conseguir pontuação consistente acima de 80%",
+      "target_date": "2024-03-01",
+      "progress": 45,
+      "estimated_completion": "2024-03-10"
+    },
+    {
+      "title": "Dominar Conhecimentos Específicos",
+      "description": "Atingir 75% de acerto na matéria mais difícil",
+      "target_date": "2024-03-15",
+      "progress": 25,
+      "estimated_completion": "2024-03-25"
+    }
+  ],
+  "metadata": {
+    "last_updated": "2024-01-15T18:30:00",
+    "user_id": "demo_user",
+    "study_plan_id": "plan_001",
+    "target_exam_date": "2024-07-15",
+    "exam_name": "TRF 1ª Região - Analista Judiciário"
+  }
+}

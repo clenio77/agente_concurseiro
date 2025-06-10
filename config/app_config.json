@@ -1,0 +1,84 @@
+{
+  "app": {
+    "name": "Assistente de Prepara\u00e7\u00e3o para Concursos",
+    "version": "2.0.0",
+    "debug": true,
+    "environment": "development"
+  },
+  "features": {
+    "dashboard": true,
+    "study_plan": true,
+    "materials": true,
+    "writing": true,
+    "mock_exam": true,
+    "spaced_repetition": true,
+    "performance_prediction": true,
+    "calendar_integration": false,
+    "notifications": true
+  },
+  "api_keys": {
+    "openai": "",
+    "serp": "",
+    "google_calendar": "",
+    "outlook": ""
+  },
+  "default_settings": {
+    "study_hours": 20,
+    "study_months": 6,
+    "default_banca": "CESPE",
+    "default_difficulty": "medium",
+    "questions_per_quiz": 10,
+    "session_timeout_minutes": 120
+  },
+  "database": {
+    "type": "sqlite",
+    "path": "data/app.db",
+    "backup_enabled": true,
+    "backup_interval_hours": 24
+  },
+  "crew_ai": {
+    "model": "gpt-3.5-turbo",
+    "temperature": 0.7,
+    "max_tokens": 2000,
+    "timeout": 30
+  },
+  "ui": {
+    "theme": "light",
+    "language": "pt-BR",
+    "items_per_page": 20,
+    "auto_save": true,
+    "show_tips": true
+  },
+  "study": {
+    "supported_bancas": [
+      "CESPE",
+      "FCC",
+      "VUNESP",
+      "FGV",
+      "IBFC"
+    ],
+    "supported_subjects": [
+      "Portugu\u00eas",
+      "Matem\u00e1tica",
+      "Direito Constitucional",
+      "Direito Administrativo",
+      "Inform\u00e1tica",
+      "Conhecimentos Espec\u00edficos",
+      "Atualidades",
+      "Racioc\u00ednio L\u00f3gico"
+    ],
+    "difficulty_levels": [
+      "easy",
+      "medium",
+      "hard",
+      "mixed"
+    ]
+  },
+  "notifications": {
+    "email_enabled": false,
+    "push_enabled": true,
+    "study_reminders": true,
+    "performance_alerts": true,
+    "daily_quiz": true
+  }
+}
