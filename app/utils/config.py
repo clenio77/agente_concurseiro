@@ -1,9 +1,18 @@
+"""
+Utilitário de configuração do aplicativo.
+Fornece funções para carregar, salvar e acessar configurações e chaves de API do sistema.
+"""
+
 import json
 import os
 from typing import Dict, Any
 
 def load_config() -> Dict[str, Any]:
-    """Carrega configurações do aplicativo"""
+    """
+    Carrega as configurações do aplicativo a partir de um arquivo JSON.
+    Se o arquivo não existir, cria uma configuração padrão e salva no disco.
+    :return: Dicionário com as configurações carregadas.
+    """
     config_path = "config/app_config.json"
     
     # Verificar se o arquivo existe
@@ -97,7 +106,11 @@ def load_config() -> Dict[str, Any]:
         return {}
 
 def save_config(config: Dict[str, Any]) -> bool:
-    """Salva configurações do aplicativo"""
+    """
+    Salva as configurações do aplicativo em um arquivo JSON.
+    :param config: Dicionário com as configurações a serem salvas.
+    :return: True se salvar com sucesso, False caso contrário.
+    """
     config_path = "config/app_config.json"
     
     try:
@@ -114,7 +127,12 @@ def save_config(config: Dict[str, Any]) -> bool:
         return False
 
 def get_api_key(service: str) -> str:
-    """Obtém chave de API para um serviço específico"""
+    """
+    Obtém a chave de API para um serviço específico.
+    Busca primeiro no arquivo de configuração e, se não encontrar, nas variáveis de ambiente.
+    :param service: Nome do serviço (ex: 'openai', 'serp').
+    :return: Chave de API como string, ou string vazia se não encontrada.
+    """
     config = load_config()
     
     # Verificar se a chave existe na configuração

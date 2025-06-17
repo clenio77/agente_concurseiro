@@ -1,5 +1,6 @@
 """
 Sistema de Análise Preditiva de Desempenho
+Fornece análise, predição e recomendações baseadas no histórico de estudos do usuário.
 """
 
 import json
@@ -12,7 +13,10 @@ import math
 
 @dataclass
 class PerformanceMetrics:
-    """Métricas de desempenho do usuário"""
+    """
+    Métricas de desempenho do usuário.
+    Inclui pontuação geral, por matéria, consistência, eficiência, áreas fortes e fracas.
+    """
     overall_score: float
     subject_scores: Dict[str, float]
     consistency_score: float
@@ -24,7 +28,10 @@ class PerformanceMetrics:
 
 @dataclass
 class Prediction:
-    """Predição de desempenho"""
+    """
+    Predição de desempenho do usuário na prova.
+    Inclui score previsto, confiança, distribuição de probabilidades, recomendações e fatores de risco.
+    """
     predicted_score: float
     confidence: float
     probability_ranges: Dict[str, float]  # ex: {"60-70": 0.2, "70-80": 0.5}
@@ -33,6 +40,10 @@ class Prediction:
     improvement_potential: float
 
 class PerformancePredictor:
+    """
+    Sistema avançado de análise preditiva de desempenho.
+    Realiza análise de métricas, predição de score, recomendações e identificação de riscos.
+    """
     def __init__(self):
         self.name = "PerformancePredictor"
         self.description = "Sistema avançado de análise preditiva de desempenho"
@@ -86,7 +97,11 @@ class PerformancePredictor:
         }
     
     def analyze_performance(self, user_data: Dict) -> PerformanceMetrics:
-        """Analisa o desempenho atual do usuário"""
+        """
+        Analisa o desempenho atual do usuário com base no histórico de simulados, matérias e horas de estudo.
+        :param user_data: Dicionário com dados do usuário.
+        :return: Instância de PerformanceMetrics.
+        """
         
         # Extrair dados históricos
         mock_scores = user_data.get('mock_exam_scores', [])
@@ -138,7 +153,13 @@ class PerformancePredictor:
     
     def predict_exam_performance(self, user_data: Dict, target_banca: str = 'CESPE', 
                                 days_until_exam: int = 90) -> Prediction:
-        """Prediz o desempenho na prova final"""
+        """
+        Prediz o desempenho do usuário na prova final, considerando banca, tempo até a prova e histórico.
+        :param user_data: Dicionário com dados do usuário.
+        :param target_banca: Nome da banca (ex: 'CESPE').
+        :param days_until_exam: Dias até a prova.
+        :return: Instância de Prediction.
+        """
         
         # Analisar desempenho atual
         metrics = self.analyze_performance(user_data)

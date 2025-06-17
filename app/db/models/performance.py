@@ -1,3 +1,8 @@
+"""
+Modelo ORM de registro de desempenho.
+Define a estrutura da tabela de registros de desempenho e seus relacionamentos no banco de dados.
+"""
+
 import uuid
 from datetime import datetime
 from typing import List
@@ -11,6 +16,7 @@ from app.db.base import Base
 class PerformanceRecord(Base):
     """
     Modelo de registro de desempenho no banco de dados.
+    Representa um registro diário/semanal de estudo, incluindo tempo, matérias, quizzes e anotações.
     """
     __tablename__ = "performance_records"
     
@@ -25,9 +31,12 @@ class PerformanceRecord(Base):
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     
-    # Relacionamentos
+    # Relacionamentos com usuário e plano de estudo
     user = relationship("User", back_populates="performance_records")
     study_plan = relationship("StudyPlan", back_populates="performance_records")
     
     def __repr__(self):
+        """
+        Retorna uma representação legível do registro de desempenho.
+        """
         return f"<PerformanceRecord {self.date} - {self.study_time_minutes} minutes>"

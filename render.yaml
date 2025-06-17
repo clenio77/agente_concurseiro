@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: agente-concurseiro
+    env: docker
+    plan: starter
+    autoDeploy: true
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DATABASE_URL
+        sync: false  # Defina no painel do Render
+      # Adicione outras variáveis conforme necessário

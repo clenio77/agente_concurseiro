@@ -1,3 +1,8 @@
+"""
+Rotas de usuários da API.
+Inclui endpoints para CRUD, consulta e atualização de usuários.
+"""
+
 from typing import Any, List
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -20,7 +25,8 @@ def read_users(
     current_user: User = Depends(get_current_admin_user),
 ) -> Any:
     """
-    Recupera todos os usuários.
+    Recupera todos os usuários (apenas para administradores).
+    Permite paginação dos resultados.
     """
     users = db.query(User).offset(skip).limit(limit).all()
     return users
@@ -33,7 +39,8 @@ def create_user(
     current_user: User = Depends(get_current_admin_user),
 ) -> Any:
     """
-    Cria um novo usuário.
+    Cria um novo usuário (apenas para administradores).
+    Verifica se o e-mail e o nome de usuário já estão registrados.
     """
     # Verificar se o e-mail já existe
     user = db.query(User).filter(User.email == user_in.email).first()
@@ -68,7 +75,7 @@ def create_user(
 @router.get("/me", response_model=UserSchema)
 def read_user_me(current_user: User = Depends(get_current_user)) -> Any:
     """
-    Recupera o usuário atual.
+    Recupera o usuário atual autenticado.
     """
     return current_user
 
@@ -80,7 +87,8 @@ def update_user_me(
     current_user: User = Depends(get_current_user),
 ) -> Any:
     """
-    Atualiza o usuário atual.
+    Atualiza os dados do usuário autenticado.
+    Verifica se o e-mail ou nome de usuário já estão registrados para outros usuários.
     """
     # Atualizar dados do usuário
     if user_in.email is not None:
@@ -122,6 +130,7 @@ def read_user_by_id(
 ) -> Any:
     """
     Recupera um usuário pelo ID.
+    Apenas administradores podem consultar outros usuários.
     """
     user = db.query(User).filter(User.id == user_id).first()
     if not user:

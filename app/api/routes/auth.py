@@ -1,3 +1,8 @@
+"""
+Rotas de autenticação da API.
+Inclui endpoints para login e teste de token.
+"""
+
 from datetime import timedelta
 from typing import Any
 
@@ -21,6 +26,9 @@ def login_access_token(
 ) -> Any:
     """
     Obtém um token de acesso OAuth2 para autenticação.
+    - Busca o usuário pelo nome de usuário.
+    - Verifica a senha e se o usuário está ativo.
+    - Gera e retorna um token JWT de acesso.
     """
     # Buscar usuário pelo nome de usuário
     user = db.query(User).filter(User.username == form_data.username).first()
@@ -51,5 +59,6 @@ def login_access_token(
 def test_token(current_user: User = Depends(get_current_user)) -> Any:
     """
     Testa se o token de acesso é válido.
+    Retorna os dados do usuário autenticado se o token for válido.
     """
     return current_user

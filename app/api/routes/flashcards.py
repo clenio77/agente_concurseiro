@@ -1,3 +1,8 @@
+"""
+Rotas de flashcards da API.
+Inclui endpoints para CRUD, revisão e listagem de flashcards do usuário.
+"""
+
 from datetime import datetime, timedelta
 from typing import Any, List
 
@@ -27,6 +32,7 @@ def read_flashcards(
 ) -> Any:
     """
     Recupera todos os flashcards do usuário atual.
+    Permite filtrar por matéria (subject) e paginar resultados.
     """
     query = db.query(Flashcard).filter(Flashcard.user_id == current_user.id)
     
@@ -44,7 +50,7 @@ def create_flashcard(
     current_user: User = Depends(get_current_user),
 ) -> Any:
     """
-    Cria um novo flashcard.
+    Cria um novo flashcard para o usuário autenticado.
     """
     flashcard = Flashcard(
         user_id=current_user.id,
@@ -65,7 +71,7 @@ def read_due_flashcards(
     current_user: User = Depends(get_current_user),
 ) -> Any:
     """
-    Recupera flashcards que estão prontos para revisão.
+    Recupera flashcards que estão prontos para revisão (baseado em next_review).
     """
     now = datetime.utcnow()
     flashcards = (
@@ -87,7 +93,9 @@ def review_flashcard(
     current_user: User = Depends(get_current_user),
 ) -> Any:
     """
-    Registra uma revisão de flashcard e atualiza o algoritmo de repetição espaçada.
+    Registra uma revisão de flashcard e atualiza o algoritmo de repetição espaçada (SM-2).
+    - Se a qualidade for menor que 3, reseta o intervalo.
+    - Caso contrário, aumenta o intervalo e ajusta o fator de facilidade.
     """
     flashcard = db.query(Flashcard).filter(
         Flashcard.id == flashcard_id,
@@ -142,7 +150,7 @@ def read_flashcard(
     current_user: User = Depends(get_current_user),
 ) -> Any:
     """
-    Recupera um flashcard pelo ID.
+    Recupera um flashcard pelo ID do usuário autenticado.
     """
     flashcard = db.query(Flashcard).filter(
         Flashcard.id == flashcard_id,
@@ -166,7 +174,7 @@ def update_flashcard(
     current_user: User = Depends(get_current_user),
 ) -> Any:
     """
-    Atualiza um flashcard.
+    Atualiza um flashcard do usuário autenticado.
     """
     flashcard = db.query(Flashcard).filter(
         Flashcard.id == flashcard_id,
@@ -204,7 +212,7 @@ def delete_flashcard(
     current_user: User = Depends(get_current_user),
 ) -> Any:
     """
-    Exclui um flashcard.
+    Exclui um flashcard do usuário autenticado.
     """
     flashcard = db.query(Flashcard).filter(
         Flashcard.id == flashcard_id,

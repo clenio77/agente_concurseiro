@@ -1,3 +1,8 @@
+"""
+Rotas de quizzes da API.
+Inclui endpoints para CRUD, submissão e listagem de quizzes do usuário.
+"""
+
 from datetime import datetime
 from typing import Any, List
 
@@ -27,6 +32,7 @@ def read_quizzes(
 ) -> Any:
     """
     Recupera todos os quizzes do usuário atual.
+    Permite paginação dos resultados.
     """
     quizzes = (
         db.query(Quiz)
@@ -45,7 +51,9 @@ def create_quiz(
     current_user: User = Depends(get_current_user),
 ) -> Any:
     """
-    Cria um novo quiz.
+    Cria um novo quiz para o usuário autenticado.
+    Se informado, valida a existência do plano de estudos relacionado.
+    Cria também as questões do quiz.
     """
     # Verificar se o plano de estudos existe
     if quiz_in.study_plan_id:
@@ -98,7 +106,7 @@ def read_quiz(
     current_user: User = Depends(get_current_user),
 ) -> Any:
     """
-    Recupera um quiz pelo ID.
+    Recupera um quiz pelo ID do usuário autenticado.
     """
     quiz = db.query(Quiz).filter(
         Quiz.id == quiz_id,
@@ -122,7 +130,8 @@ def submit_quiz(
     current_user: User = Depends(get_current_user),
 ) -> Any:
     """
-    Submete respostas para um quiz.
+    Submete respostas para um quiz do usuário autenticado.
+    Calcula a pontuação e marca o quiz como completado.
     """
     quiz = db.query(Quiz).filter(
         Quiz.id == quiz_id,
@@ -185,7 +194,7 @@ def delete_quiz(
     current_user: User = Depends(get_current_user),
 ) -> Any:
     """
-    Exclui um quiz.
+    Exclui um quiz do usuário autenticado.
     """
     quiz = db.query(Quiz).filter(
         Quiz.id == quiz_id,

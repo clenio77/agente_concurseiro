@@ -1,3 +1,8 @@
+"""
+Utilitário de dashboard do sistema.
+Fornece funções para renderizar o painel principal do usuário, exibir métricas, conquistas, recomendações e atualizar dados do dashboard.
+"""
+
 import streamlit as st
 import json
 import pandas as pd
@@ -7,9 +12,85 @@ from datetime import datetime, timedelta
 from .gamification import GamificationSystem
 from .notifications import NotificationManager, generate_daily_notifications
 
+def _get_fallback_dashboard_data():
+    """
+    Retorna dados de fallback para o dashboard caso não seja possível carregar do arquivo.
+    Utilizado para garantir que o dashboard funcione mesmo sem dados persistidos.
+    :return: Dicionário com dados simulados de progresso, atividades, desempenho, etc.
+    """
+    return {
+        "progress_summary": {
+            "completed_weeks": 2,
+            "total_weeks": 24,
+            "completion_percentage": 8.33,
+            "current_phase": "Base Teórica",
+            "next_milestone": "Início da fase de exercícios",
+            "days_until_exam": 180,
+            "total_study_hours": 40,
+            "weekly_goal_hours": 20,
+            "current_week_hours": 8
+        },
+        "subject_progress": {
+            "Português": {"completion": 15, "priority": "Alta", "hours_planned": 48, "hours_completed": 7, "last_score": 70, "trend": "improving"},
+            "Matemática": {"completion": 10, "priority": "Média", "hours_planned": 36, "hours_completed": 4, "last_score": 60, "trend": "stable"},
+            "Direito": {"completion": 5, "priority": "Alta", "hours_planned": 60, "hours_completed": 3, "last_score": 65, "trend": "needs_attention"}
+        },
+        "upcoming_activities": [
+            {"date": "2024-01-16", "week": 3, "activity": {"type": "Estudo", "description": "Revisão de gramática", "duration": "3 horas", "priority": "Alta"}},
+            {"date": "2024-01-17", "week": 3, "activity": {"type": "Exercícios", "description": "Questões de matemática", "duration": "2 horas", "priority": "Média"}},
+            {"date": "2024-01-18", "week": 4, "activity": {"type": "Redação", "description": "Prática de redação", "duration": "2 horas", "priority": "Média"}}
+        ],
+        "performance_metrics": {
+            "mock_exam_scores": [
+                {"date": "2024-01-01", "score": 65, "subjects": {"Português": 70, "Matemática": 60, "Direito": 65}},
+                {"date": "2024-01-08", "score": 72, "subjects": {"Português": 75, "Matemática": 65, "Direito": 75}}
+            ],
+            "writing_scores": [
+                {"date": "2024-01-05", "score": 7.5, "criteria": {"estrutura": 8, "argumentacao": 7, "gramatica": 8}},
+                {"date": "2024-01-12", "score": 8.0, "criteria": {"estrutura": 8, "argumentacao": 8, "gramatica": 8}}
+            ],
+            "questions_accuracy": 68,
+            "consistency_score": 75,
+            "improvement_rate": 8.5
+        },
+        "achievements": [],
+        "recommendations": [
+            {
+                "type": "study_focus",
+                "priority": "high",
+                "title": "Foque em Matemática",
+                "description": "Sua pontuação em Matemática precisa melhorar.",
+                "action": "Dedique mais 2 horas semanais"
+            }
+        ],
+        "study_streak": {"current_streak": 5, "longest_streak": 8, "total_study_days": 15},
+        "goals": {
+            "weekly_hours": {"target": 20, "current": 8, "percentage": 40},
+            "target_score": {"overall": 80, "current_average": 68, "gap": 12}
+        }
+    }
+
 def render_dashboard():
-    """Renderiza o dashboard principal"""
+    """
+    Renderiza o dashboard principal do sistema.
+    Exibe notificações, métricas de progresso, gamificação, gráficos, próximas atividades, conquistas e recomendações.
+    """
     st.title("📊 Dashboard - Acompanhamento de Estudos")
+
+    # Carregar dados do dashboard (em produção, viria do banco de dados)
+    try:
+        with open("data/dashboard/dashboard_data.json", "r", encoding='utf-8') as f:
+            dashboard_data = json.load(f)
+    except FileNotFoundError:
+        # Tentar carregar do local antigo
+        try:
+            with open("data/dashboard_data.json", "r", encoding='utf-8') as f:
+                dashboard_data = json.load(f)
+        except:
+            dashboard_data = _get_fallback_dashboard_data()
+    except Exception as e:
+        print(f"Erro ao carregar dados do dashboard: {e}")
+        dashboard_data = _get_fallback_dashboard_data()
 
     # Sistema de notificações
     notifications_manager = st.session_state.notifications
@@ -81,75 +162,6 @@ def render_dashboard():
         st.session_state.notifications = NotificationManager(
             user_id=st.session_state.get('current_user', 'demo_user')
         )
-    
-    # Carregar dados do dashboard (em produção, viria do banco de dados)
-    try:
-        with open("data/dashboard/dashboard_data.json", "r", encoding='utf-8') as f:
-            dashboard_data = json.load(f)
-    except FileNotFoundError:
-        # Tentar carregar do local antigo
-        try:
-            with open("data/dashboard_data.json", "r", encoding='utf-8') as f:
-                dashboard_data = json.load(f)
-        except:
-            dashboard_data = _get_fallback_dashboard_data()
-    except Exception as e:
-        print(f"Erro ao carregar dados do dashboard: {e}")
-        dashboard_data = _get_fallback_dashboard_data()
-
-def _get_fallback_dashboard_data():
-    """Dados de fallback caso não consiga carregar o arquivo"""
-    return {
-        "progress_summary": {
-            "completed_weeks": 2,
-            "total_weeks": 24,
-            "completion_percentage": 8.33,
-            "current_phase": "Base Teórica",
-            "next_milestone": "Início da fase de exercícios",
-            "days_until_exam": 180,
-            "total_study_hours": 40,
-            "weekly_goal_hours": 20,
-            "current_week_hours": 8
-        },
-        "subject_progress": {
-            "Português": {"completion": 15, "priority": "Alta", "hours_planned": 48, "hours_completed": 7, "last_score": 70, "trend": "improving"},
-            "Matemática": {"completion": 10, "priority": "Média", "hours_planned": 36, "hours_completed": 4, "last_score": 60, "trend": "stable"},
-            "Direito": {"completion": 5, "priority": "Alta", "hours_planned": 60, "hours_completed": 3, "last_score": 65, "trend": "needs_attention"}
-        },
-        "upcoming_activities": [
-            {"date": "2024-01-16", "week": 3, "activity": {"type": "Estudo", "description": "Revisão de gramática", "duration": "3 horas", "priority": "Alta"}},
-            {"date": "2024-01-17", "week": 3, "activity": {"type": "Exercícios", "description": "Questões de matemática", "duration": "2 horas", "priority": "Média"}},
-            {"date": "2024-01-18", "week": 4, "activity": {"type": "Redação", "description": "Prática de redação", "duration": "2 horas", "priority": "Média"}}
-        ],
-        "performance_metrics": {
-            "mock_exam_scores": [
-                {"date": "2024-01-01", "score": 65, "subjects": {"Português": 70, "Matemática": 60, "Direito": 65}},
-                {"date": "2024-01-08", "score": 72, "subjects": {"Português": 75, "Matemática": 65, "Direito": 75}}
-            ],
-            "writing_scores": [
-                {"date": "2024-01-05", "score": 7.5, "criteria": {"estrutura": 8, "argumentacao": 7, "gramatica": 8}},
-                {"date": "2024-01-12", "score": 8.0, "criteria": {"estrutura": 8, "argumentacao": 8, "gramatica": 8}}
-            ],
-            "questions_accuracy": 68,
-            "consistency_score": 75,
-            "improvement_rate": 8.5
-        },
-        "achievements": [],
-        "recommendations": [
-            {
-                "type": "study_focus",
-                "priority": "high",
-                "title": "Foque em Matemática",
-                "description": "Sua pontuação em Matemática precisa melhorar.",
-                "action": "Dedique mais 2 horas semanais"
-            }
-        ],
-        "study_streak": {"current_streak": 5, "longest_streak": 8, "total_study_days": 15},
-        "goals": {
-            "weekly_hours": {"target": 20, "current": 8, "percentage": 40},
-            "target_score": {"overall": 80, "current_average": 68, "gap": 12}
-        }
-    }
     
     # Header com métricas principais
     st.subheader("📊 Visão Geral")
@@ -504,7 +516,12 @@ def _get_fallback_dashboard_data():
                 st.divider()
 
 def update_dashboard_data(new_data):
-    """Atualiza os dados do dashboard"""
+    """
+    Atualiza os dados do dashboard no arquivo JSON.
+    Mescla os dados existentes com os novos dados fornecidos.
+    :param new_data: Dicionário com os dados a serem atualizados.
+    :return: True se atualizar com sucesso, False caso contrário.
+    """
     try:
         # Carregar dados existentes
         try:

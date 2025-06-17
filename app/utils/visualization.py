@@ -1,3 +1,8 @@
+"""
+Utilitário de visualização de dados.
+Fornece funções para renderizar gráficos e indicadores no dashboard usando Streamlit, Altair, Plotly e Matplotlib.
+"""
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -5,8 +10,11 @@ import altair as alt
 from typing import Dict, List
 
 def render_progress_charts(progress_data: Dict):
-    """Renderiza gráficos de progresso para o dashboard"""
-    
+    """
+    Renderiza gráficos de progresso para o dashboard do usuário.
+    Inclui gráficos de conclusão por matéria, curva de aprendizado, radar de pontuações, eficiência de estudo, etc.
+    :param progress_data: Dicionário com dados de progresso do usuário.
+    """
     # Gráfico de conclusão por matéria
     if "subject_completion" in progress_data:
         st.subheader("Conclusão por Matéria")
@@ -158,8 +166,11 @@ def render_progress_charts(progress_data: Dict):
         st.plotly_chart(fig, use_container_width=True)
 
 def render_prediction_charts(prediction_data: Dict):
-    """Renderiza gráficos de previsão para o dashboard"""
-    
+    """
+    Renderiza gráficos de previsão de desempenho para o dashboard.
+    Inclui gráficos de linha para previsão de pontuação e medidor de probabilidade de sucesso.
+    :param prediction_data: Dicionário com dados de previsão de desempenho.
+    """
     # Gráfico de previsão de pontuação
     if "predictions" in prediction_data and "expected_timeline" in prediction_data["predictions"]:
         st.subheader("Previsão de Desempenho")

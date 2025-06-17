@@ -1,3 +1,8 @@
+"""
+Rotas de planos de estudo da API.
+Inclui endpoints para CRUD e listagem de planos de estudo do usuário.
+"""
+
 from datetime import datetime, timedelta
 from typing import Any, List
 
@@ -25,6 +30,7 @@ def read_study_plans(
 ) -> Any:
     """
     Recupera todos os planos de estudo do usuário atual.
+    Permite paginação dos resultados.
     """
     study_plans = (
         db.query(StudyPlan)
@@ -43,7 +49,8 @@ def create_study_plan(
     current_user: User = Depends(get_current_user),
 ) -> Any:
     """
-    Cria um novo plano de estudos.
+    Cria um novo plano de estudos para o usuário autenticado.
+    Define a data de início e calcula a data de término com base na duração.
     """
     # Definir data de início se não fornecida
     start_date = study_plan_in.start_date or datetime.utcnow()
@@ -80,7 +87,7 @@ def read_study_plan(
     current_user: User = Depends(get_current_user),
 ) -> Any:
     """
-    Recupera um plano de estudos pelo ID.
+    Recupera um plano de estudos pelo ID do usuário autenticado.
     """
     study_plan = db.query(StudyPlan).filter(
         StudyPlan.id == study_plan_id,
@@ -104,7 +111,8 @@ def update_study_plan(
     current_user: User = Depends(get_current_user),
 ) -> Any:
     """
-    Atualiza um plano de estudos.
+    Atualiza um plano de estudos do usuário autenticado.
+    Recalcula a data de término se a duração for alterada.
     """
     study_plan = db.query(StudyPlan).filter(
         StudyPlan.id == study_plan_id,
@@ -156,7 +164,7 @@ def delete_study_plan(
     current_user: User = Depends(get_current_user),
 ) -> Any:
     """
-    Exclui um plano de estudos.
+    Exclui um plano de estudos do usuário autenticado.
     """
     study_plan = db.query(StudyPlan).filter(
         StudyPlan.id == study_plan_id,

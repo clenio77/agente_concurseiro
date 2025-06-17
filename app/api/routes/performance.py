@@ -1,3 +1,8 @@
+"""
+Rotas de desempenho da API.
+Inclui endpoints para CRUD e estatísticas de desempenho do usuário.
+"""
+
 from typing import Any, List
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -26,6 +31,7 @@ def read_performance_records(
 ) -> Any:
     """
     Recupera todos os registros de desempenho do usuário atual.
+    Permite paginação dos resultados.
     """
     records = (
         db.query(PerformanceRecord)
@@ -44,7 +50,8 @@ def create_performance_record(
     current_user: User = Depends(get_current_user),
 ) -> Any:
     """
-    Cria um novo registro de desempenho.
+    Cria um novo registro de desempenho para o usuário autenticado.
+    Se informado, valida a existência do plano de estudos relacionado.
     """
     # Verificar se o plano de estudos existe
     if record_in.study_plan_id:
@@ -81,6 +88,7 @@ def get_performance_stats(
 ) -> Any:
     """
     Recupera estatísticas de desempenho do usuário atual.
+    Calcula tempo total de estudo, distribuição por matéria, média de quizzes, retenção de flashcards, sequência de estudo e progresso semanal/mensal.
     """
     # Implementar lógica para calcular estatísticas de desempenho
     # Este é um exemplo simplificado
@@ -121,12 +129,10 @@ def get_performance_stats(
     
     flashcard_retention_rate = sum(flashcard_retention) / len(flashcard_retention) if flashcard_retention else 0
     
-    # Sequência de estudo
-    # Implementação simplificada
+    # Sequência de estudo (exemplo simplificado)
     study_streak = 5
     
-    # Progresso semanal e mensal
-    # Implementação simplificada
+    # Progresso semanal e mensal (exemplo simplificado)
     weekly_progress = [
         {"week": "Semana 1", "study_time": 300, "quiz_score": 85},
         {"week": "Semana 2", "study_time": 350, "quiz_score": 88},
@@ -155,7 +161,7 @@ def read_performance_record(
     current_user: User = Depends(get_current_user),
 ) -> Any:
     """
-    Recupera um registro de desempenho pelo ID.
+    Recupera um registro de desempenho pelo ID do usuário autenticado.
     """
     record = db.query(PerformanceRecord).filter(
         PerformanceRecord.id == record_id,
@@ -179,7 +185,7 @@ def update_performance_record(
     current_user: User = Depends(get_current_user),
 ) -> Any:
     """
-    Atualiza um registro de desempenho.
+    Atualiza um registro de desempenho do usuário autenticado.
     """
     record = db.query(PerformanceRecord).filter(
         PerformanceRecord.id == record_id,
@@ -219,7 +225,7 @@ def delete_performance_record(
     current_user: User = Depends(get_current_user),
 ) -> Any:
     """
-    Exclui um registro de desempenho.
+    Exclui um registro de desempenho do usuário autenticado.
     """
     record = db.query(PerformanceRecord).filter(
         PerformanceRecord.id == record_id,

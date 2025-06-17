@@ -1,3 +1,8 @@
+"""
+Modelo ORM do usuário.
+Define a estrutura da tabela de usuários e seus relacionamentos no banco de dados.
+"""
+
 import uuid
 from datetime import datetime
 
@@ -10,6 +15,7 @@ from app.db.base import Base
 class User(Base):
     """
     Modelo de usuário no banco de dados.
+    Representa um usuário do sistema, incluindo autenticação, permissões e relacionamentos.
     """
     __tablename__ = "users"
     
@@ -23,11 +29,14 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relacionamentos
+    # Relacionamentos com outras tabelas
     study_plans = relationship("StudyPlan", back_populates="user", cascade="all, delete-orphan")
     quizzes = relationship("Quiz", back_populates="user", cascade="all, delete-orphan")
     flashcards = relationship("Flashcard", back_populates="user", cascade="all, delete-orphan")
     performance_records = relationship("PerformanceRecord", back_populates="user", cascade="all, delete-orphan")
     
     def __repr__(self):
+        """
+        Retorna uma representação legível do usuário.
+        """
         return f"<User {self.username}>"

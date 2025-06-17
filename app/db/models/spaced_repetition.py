@@ -1,3 +1,8 @@
+"""
+Modelo ORM de repetição espaçada (baralhos, flashcards e revisões).
+Define a estrutura das tabelas de baralhos, flashcards e revisões, além dos relacionamentos no banco de dados.
+"""
+
 import uuid
 from datetime import datetime
 from sqlalchemy import Column, String, DateTime, Text, Integer, ForeignKey, JSON, Float, Boolean
@@ -7,8 +12,10 @@ from sqlalchemy.orm import relationship
 from app.db.base import Base
 
 class FlashcardDeck(Base):
-    """Modelo de baralho de flashcards no banco de dados."""
-    
+    """
+    Modelo de baralho de flashcards no banco de dados.
+    Representa um agrupamento de flashcards por assunto ou tema.
+    """
     __tablename__ = "flashcard_decks"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -19,16 +26,21 @@ class FlashcardDeck(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relacionamentos
+    # Relacionamentos com usuário e flashcards
     user = relationship("User", back_populates="flashcard_decks")
     flashcards = relationship("Flashcard", back_populates="deck", cascade="all, delete-orphan")
     
     def __repr__(self):
+        """
+        Retorna uma representação legível do baralho.
+        """
         return f"<FlashcardDeck {self.title}>"
 
 class Flashcard(Base):
-    """Modelo de flashcard no banco de dados."""
-    
+    """
+    Modelo de flashcard no banco de dados.
+    Representa um cartão de memorização vinculado a um baralho, com dados para repetição espaçada.
+    """
     __tablename__ = "flashcards"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -46,16 +58,21 @@ class Flashcard(Base):
     next_review = Column(DateTime)
     review_count = Column(Integer, default=0)
     
-    # Relacionamentos
+    # Relacionamentos com baralho e revisões
     deck = relationship("FlashcardDeck", back_populates="flashcards")
     reviews = relationship("FlashcardReview", back_populates="flashcard", cascade="all, delete-orphan")
     
     def __repr__(self):
+        """
+        Retorna uma representação legível do flashcard.
+        """
         return f"<Flashcard {self.id}>"
 
 class FlashcardReview(Base):
-    """Modelo de revisão de flashcard no banco de dados."""
-    
+    """
+    Modelo de revisão de flashcard no banco de dados.
+    Representa uma revisão feita pelo usuário, usada para o algoritmo de repetição espaçada.
+    """
     __tablename__ = "flashcard_reviews"
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
@@ -66,5 +83,5 @@ class FlashcardReview(Base):
     ease_factor = Column(Float, nullable=False)
     interval = Column(Integer, nullable=False)  # em dias
     
-    # Relacionamentos
-    flashcard
+    # Relacionamento com o flashcard
+    flashcard = relationship("Flashcard", back_populates="reviews")

@@ -1,3 +1,8 @@
+"""
+Ponto de entrada principal da aplicação FastAPI.
+Configura a aplicação, middlewares, rotas e documentação.
+"""
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -16,7 +21,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Configurar CORS
+# Configurar CORS para permitir requisições de origens definidas
 if settings.BACKEND_CORS_ORIGINS:
     app.add_middleware(
         CORSMiddleware,
@@ -26,12 +31,16 @@ if settings.BACKEND_CORS_ORIGINS:
         allow_headers=["*"],
     )
 
-# Incluir rotas da API
+# Incluir rotas da API principal
 app.include_router(api_router, prefix=settings.API_PREFIX)
 
-# Rota raiz
+# Rota raiz para verificação rápida da API
 @app.get("/")
 async def root():
+    """
+    Endpoint raiz da API.
+    Retorna mensagem de boas-vindas e link para a documentação.
+    """
     return {
         "message": "Bem-vindo à API do Assistente de Preparação para Concursos",
         "docs": f"{settings.API_PREFIX}/docs",

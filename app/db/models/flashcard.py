@@ -1,8 +1,13 @@
+"""
+Modelo ORM de flashcards e revisões de flashcards.
+Define a estrutura das tabelas de flashcards e suas revisões, além dos relacionamentos no banco de dados.
+"""
+
 import uuid
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text, Float
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
@@ -11,6 +16,7 @@ from app.db.base import Base
 class Flashcard(Base):
     """
     Modelo de flashcard no banco de dados.
+    Representa um cartão de memorização para estudo, com campos para repetição espaçada.
     """
     __tablename__ = "flashcards"
     
@@ -26,13 +32,14 @@ class Flashcard(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relacionamentos
+    # Relacionamentos com usuário e revisões
     user = relationship("User", back_populates="flashcards")
     reviews = relationship("FlashcardReview", back_populates="flashcard", cascade="all, delete-orphan")
 
 class FlashcardReview(Base):
     """
     Modelo de revisão de flashcard no banco de dados.
+    Representa uma revisão feita pelo usuário, usada para o algoritmo de repetição espaçada.
     """
     __tablename__ = "flashcard_reviews"
     
@@ -41,5 +48,5 @@ class FlashcardReview(Base):
     quality = Column(Integer, nullable=False)  # 0-5
     review_date = Column(DateTime, default=datetime.utcnow)
     
-    # Relacionamentos
+    # Relacionamento com o flashcard
     flashcard = relationship("Flashcard", back_populates="reviews")

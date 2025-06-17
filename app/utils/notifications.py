@@ -1,5 +1,6 @@
 """
 Sistema de Notificações para o Agente Concurseiro
+Gerencia notificações, lembretes, alertas e recomendações para o usuário.
 """
 
 import json
@@ -10,6 +11,9 @@ from dataclasses import dataclass, asdict
 from enum import Enum
 
 class NotificationType(Enum):
+    """
+    Tipos de notificações suportados pelo sistema.
+    """
     STUDY_REMINDER = "study_reminder"
     QUIZ_REMINDER = "quiz_reminder"
     GOAL_ACHIEVEMENT = "goal_achievement"
@@ -19,6 +23,9 @@ class NotificationType(Enum):
     RECOMMENDATION = "recommendation"
 
 class NotificationPriority(Enum):
+    """
+    Níveis de prioridade para notificações.
+    """
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
@@ -26,7 +33,10 @@ class NotificationPriority(Enum):
 
 @dataclass
 class Notification:
-    """Estrutura de uma notificação"""
+    """
+    Estrutura de uma notificação do sistema.
+    Inclui tipo, prioridade, título, mensagem, ações e metadados.
+    """
     id: str
     type: NotificationType
     priority: NotificationPriority
@@ -48,7 +58,14 @@ class Notification:
             self.metadata = {}
 
 class NotificationManager:
+    """
+    Gerencia notificações do usuário: criação, leitura, atualização, limpeza e configurações.
+    """
     def __init__(self, user_id: str = "demo_user"):
+        """
+        Inicializa o gerenciador de notificações para um usuário específico.
+        Cria diretórios e carrega notificações e configurações persistidas.
+        """
         self.user_id = user_id
         self.notifications_file = f"data/users/{user_id}/notifications.json"
         self.settings_file = f"data/users/{user_id}/notification_settings.json"
@@ -142,7 +159,18 @@ class NotificationManager:
                           message: str, priority: NotificationPriority = NotificationPriority.MEDIUM,
                           action_text: str = None, action_url: str = None,
                           scheduled_for: datetime = None, metadata: Dict = None) -> Notification:
-        """Cria uma nova notificação"""
+        """
+        Cria uma nova notificação para o usuário, respeitando as configurações de tipo e prioridade.
+        :param notification_type: Tipo da notificação.
+        :param title: Título da notificação.
+        :param message: Mensagem da notificação.
+        :param priority: Prioridade da notificação.
+        :param action_text: Texto do botão de ação.
+        :param action_url: URL de ação.
+        :param scheduled_for: Data/hora agendada.
+        :param metadata: Metadados adicionais.
+        :return: Instância de Notification criada.
+        """
         
         # Verificar se notificações estão habilitadas
         if not self.settings.get("enabled", True):
@@ -175,13 +203,22 @@ class NotificationManager:
         return notification
     
     def get_unread_notifications(self, limit: int = 10) -> List[Notification]:
-        """Retorna notificações não lidas"""
+        """
+        Retorna as notificações não lidas do usuário, ordenadas por prioridade e data.
+        :param limit: Quantidade máxima de notificações a retornar.
+        :return: Lista de notificações não lidas.
+        """
         unread = [n for n in self.notifications if not n.read and not n.dismissed]
         unread.sort(key=lambda x: (x.priority.value, x.created_at), reverse=True)
         return unread[:limit]
     
     def get_recent_notifications(self, days: int = 7, limit: int = 20) -> List[Notification]:
-        """Retorna notificações recentes"""
+        """
+        Retorna notificações recentes dos últimos dias.
+        :param days: Quantidade de dias a considerar.
+        :param limit: Quantidade máxima de notificações a retornar.
+        :return: Lista de notificações recentes.
+        """
         cutoff_date = datetime.now() - timedelta(days=days)
         recent = [
             n for n in self.notifications 
@@ -191,7 +228,10 @@ class NotificationManager:
         return recent[:limit]
     
     def mark_as_read(self, notification_id: str):
-        """Marca notificação como lida"""
+        """
+        Marca uma notificação como lida.
+        :param notification_id: ID da notificação a ser marcada.
+        """
         for notification in self.notifications:
             if notification.id == notification_id:
                 notification.read = True

@@ -1,5 +1,6 @@
 """
 Sistema de Gamificação para o Agente Concurseiro
+Gerencia conquistas, badges, experiência, níveis e estatísticas do usuário.
 """
 
 import json
@@ -10,7 +11,10 @@ from dataclasses import dataclass, asdict
 
 @dataclass
 class Achievement:
-    """Representa uma conquista do usuário"""
+    """
+    Representa uma conquista do usuário.
+    Cada conquista pode ter progresso, ser de diferentes categorias e conceder pontos.
+    """
     id: str
     title: str
     description: str
@@ -24,7 +28,10 @@ class Achievement:
 
 @dataclass
 class Badge:
-    """Representa um badge/medalha"""
+    """
+    Representa um badge/medalha do sistema de gamificação.
+    Badges têm requisitos, raridade e podem ser conquistados por ações específicas.
+    """
     id: str
     name: str
     description: str
@@ -34,7 +41,15 @@ class Badge:
     earned_date: Optional[str] = None
 
 class GamificationSystem:
+    """
+    Sistema de gamificação do usuário.
+    Gerencia conquistas, badges, experiência, níveis e estatísticas do usuário.
+    """
     def __init__(self, user_id: str = "demo_user"):
+        """
+        Inicializa o sistema de gamificação para um usuário específico.
+        Cria diretórios e carrega dados persistidos.
+        """
         self.user_id = user_id
         self.user_data_path = f"data/users/{user_id}"
         self.achievements_file = f"{self.user_data_path}/achievements.json"
@@ -341,7 +356,11 @@ class GamificationSystem:
             print(f"Erro ao salvar dados: {e}")
     
     def add_experience(self, points: int, activity: str = ""):
-        """Adiciona experiência e verifica level up"""
+        """
+        Adiciona pontos de experiência ao usuário e verifica se houve level up.
+        :param points: Quantidade de experiência a adicionar.
+        :param activity: Descrição da atividade que gerou XP.
+        """
         old_level = self.stats["level"]
         self.stats["experience"] += points
         self.stats["total_points"] += points
@@ -375,7 +394,11 @@ class GamificationSystem:
         }
     
     def check_achievements(self, activity_data: Dict) -> List[Achievement]:
-        """Verifica e atualiza conquistas baseadas na atividade"""
+        """
+        Verifica e atualiza conquistas do usuário com base em uma atividade realizada.
+        :param activity_data: Dicionário com dados da atividade (ex: tipo, progresso, pontuação).
+        :return: Lista de conquistas atualizadas.
+        """
         new_achievements = []
         
         for achievement_def in self.available_achievements:
@@ -449,7 +472,12 @@ class GamificationSystem:
         return 0.0
     
     def update_activity(self, activity_type: str, data: Dict) -> Dict:
-        """Atualiza atividade do usuário e verifica conquistas"""
+        """
+        Atualiza estatísticas e progresso do usuário para um tipo de atividade.
+        :param activity_type: Tipo da atividade (ex: 'quiz', 'study', 'writing').
+        :param data: Dados da atividade.
+        :return: Estatísticas atualizadas.
+        """
         results = {
             "new_achievements": [],
             "level_up": None,
@@ -514,7 +542,11 @@ class GamificationSystem:
         return results
     
     def get_user_summary(self) -> Dict:
-        """Retorna resumo do usuário para exibição"""
+        """
+        Retorna um resumo dos dados de gamificação do usuário para exibição no dashboard.
+        Inclui nível, pontos, conquistas, badges, melhor nota, etc.
+        :return: Dicionário com resumo dos dados do usuário.
+        """
         return {
             "level": self.stats["level"],
             "experience": self.stats["experience"],
@@ -530,11 +562,18 @@ class GamificationSystem:
         }
     
     def get_recent_achievements(self, limit: int = 5) -> List[Achievement]:
-        """Retorna conquistas recentes"""
+        """
+        Retorna as conquistas mais recentes do usuário.
+        :param limit: Quantidade máxima de conquistas a retornar.
+        :return: Lista de conquistas recentes.
+        """
         earned_achievements = [a for a in self.achievements if a.is_earned and a.earned_date]
         earned_achievements.sort(key=lambda x: x.earned_date, reverse=True)
         return earned_achievements[:limit]
     
     def get_progress_achievements(self) -> List[Achievement]:
-        """Retorna conquistas em progresso"""
+        """
+        Retorna conquistas em andamento (ainda não concluídas).
+        :return: Lista de conquistas em progresso.
+        """
         return [a for a in self.achievements if not a.is_earned and a.progress > 0]

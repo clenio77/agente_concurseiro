@@ -1,3 +1,8 @@
+"""
+Modelo ORM do plano de estudos.
+Define a estrutura da tabela de planos de estudo e seus relacionamentos no banco de dados.
+"""
+
 import uuid
 from datetime import datetime
 
@@ -10,6 +15,7 @@ from app.db.base import Base
 class StudyPlan(Base):
     """
     Modelo de plano de estudos no banco de dados.
+    Representa um plano de estudos personalizado para o usuário, incluindo cronograma, conteúdo e vínculo com concursos.
     """
     __tablename__ = "study_plans"
     
@@ -30,7 +36,7 @@ class StudyPlan(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relacionamentos
+    # Relacionamentos com outras tabelas
     user = relationship("User", back_populates="study_plans")
     quizzes = relationship("Quiz", back_populates="study_plan", cascade="all, delete-orphan")
     performance_records = relationship("PerformanceRecord", back_populates="study_plan", cascade="all, delete-orphan")

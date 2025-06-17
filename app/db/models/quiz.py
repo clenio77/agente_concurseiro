@@ -1,3 +1,8 @@
+"""
+Modelo ORM de quizzes e questões de quiz.
+Define a estrutura das tabelas de quizzes e suas questões, além dos relacionamentos no banco de dados.
+"""
+
 import uuid
 from datetime import datetime
 from typing import List
@@ -11,6 +16,7 @@ from app.db.base import Base
 class Quiz(Base):
     """
     Modelo de quiz no banco de dados.
+    Representa um simulado ou teste criado pelo usuário, com vínculo a plano de estudo e questões.
     """
     __tablename__ = "quizzes"
     
@@ -28,7 +34,7 @@ class Quiz(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    # Relacionamentos
+    # Relacionamentos com usuário, plano de estudo e questões
     user = relationship("User", back_populates="quizzes")
     study_plan = relationship("StudyPlan", back_populates="quizzes")
     questions = relationship("QuizQuestion", back_populates="quiz", cascade="all, delete-orphan")
@@ -36,6 +42,7 @@ class Quiz(Base):
 class QuizQuestion(Base):
     """
     Modelo de questão de quiz no banco de dados.
+    Representa uma questão de múltipla escolha vinculada a um quiz.
     """
     __tablename__ = "quiz_questions"
     
@@ -52,5 +59,5 @@ class QuizQuestion(Base):
     time_spent_seconds = Column(Integer, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     
-    # Relacionamentos
+    # Relacionamento com o quiz
     quiz = relationship("Quiz", back_populates="questions")
