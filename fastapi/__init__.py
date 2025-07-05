@@ -51,6 +51,14 @@ class FastAPI:  # noqa: D101
     def patch(self, path: str, **_kwargs):
         return self.get(path, **_kwargs)
 
+    # ------------------------------------------------------------------
+    # Middleware e dependências
+    # ------------------------------------------------------------------
+
+    def add_middleware(self, middleware_cls, **options):  # noqa: D401
+        """Registra middleware fictício (apenas armazena referência)."""
+        self._middlewares.append((middleware_cls, options))
+
     # Método responsável pelo TestClient stub
     def _handle_request(self, method: str, path: str, data: Any | None = None):
         if path in self.routes:
