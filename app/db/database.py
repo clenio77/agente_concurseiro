@@ -3,9 +3,9 @@ Configuração e gerenciamento do banco de dados
 """
 
 import os
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine, event, text
 from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.pool import StaticPool
+from sqlalchemy.pool import StaticPool, QueuePool
 from contextlib import contextmanager
 import logging
 from typing import Generator
@@ -85,7 +85,7 @@ class DatabaseManager:
             os.makedirs(os.path.dirname(db_path), exist_ok=True)
             return f"sqlite:///{db_path}"
     
-    @_retry(max_attempts=5, delay=1.0)
+    @_retry(max_attempts=5, delay=1)
     def _create_engine(self):
         """Cria engine do SQLAlchemy"""
         
@@ -116,10 +116,11 @@ class DatabaseManager:
             # Configurações para PostgreSQL
             engine = create_engine(
                 self.database_url,
+                poolclass=QueuePool,
                 pool_size=int(os.getenv("DB_POOL_SIZE", "10")),
                 max_overflow=int(os.getenv("DB_MAX_OVERFLOW", "20")),
                 pool_pre_ping=True,
-                pool_recycle=3600,
+                pool_recycle=1800,
                 echo=os.getenv("SQL_DEBUG", "false").lower() == "true"
             )
         
@@ -166,7 +167,7 @@ class DatabaseManager:
         """Verifica saúde do banco de dados"""
         try:
             with self.get_session() as session:
-                session.execute("SELECT 1")
+                session.execute(text("SELECT 1"))
             return True
         except Exception as e:
             logger.error(f"❌ Health check falhou: {e}")
