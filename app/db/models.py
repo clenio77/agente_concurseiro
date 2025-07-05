@@ -3,6 +3,7 @@ Modelos de banco de dados para o Agente Concurseiro
 """
 
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Float, JSON, ForeignKey
+import os
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -280,7 +281,7 @@ class Notification(Base):
     scheduled_for = Column(DateTime)
     
     # Metadados
-    metadata = Column(JSON, default=dict)
+    extra_metadata = Column("metadata", JSON, default=dict)
     created_at = Column(DateTime, default=func.now())
     read_at = Column(DateTime)
     
