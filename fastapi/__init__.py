@@ -120,11 +120,14 @@ class CORSMiddleware:  # noqa: D101
     def __init__(self, *args, **kwargs):  # noqa: D401
         pass
 
-# Registrar submódulo
+# Criar submódulos de middleware
 middleware_module = types.ModuleType("fastapi.middleware")
 cors_module = types.ModuleType("fastapi.middleware.cors")
 setattr(cors_module, "CORSMiddleware", CORSMiddleware)
-middleware_module.cors = cors_module
+
+# Atribuir dinamicamente usando setattr para evitar erros de tipo
+setattr(middleware_module, "cors", cors_module)  # type: ignore[attr-defined]
+
 # Introduzir nos sys.modules
 sys.modules["fastapi.middleware"] = middleware_module
 sys.modules["fastapi.middleware.cors"] = cors_module
