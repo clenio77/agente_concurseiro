@@ -177,7 +177,14 @@ class DatabaseManager:
         """Obtém estatísticas do banco"""
         try:
             with self.get_session() as session:
-                from app.db.models import User, MockExam, Essay, Question  # noqa: WPS433
+                # Import dentro do método evita problemas de import cíclico;
+                # para o linter/mypy usamos ignore.
+                from app.db.models import User as _User  # type: ignore[attr-defined]  # noqa: WPS433
+                from app.db.models import MockExam as _MockExam  # type: ignore[attr-defined]
+                from app.db.models import Essay as _Essay  # type: ignore[attr-defined]
+                from app.db.models import Question as _Question  # type: ignore[attr-defined]
+
+                User, MockExam, Essay, Question = _User, _MockExam, _Essay, _Question
                 
                 stats = {
                     "users_count": session.query(User).count(),
@@ -231,7 +238,7 @@ def seed_database():
     
     try:
         with db_manager.get_session() as session:
-            from .models import SystemConfig, Question
+            from app.db.models import SystemConfig, Question  # type: ignore[attr-defined]  # noqa: WPS433
             
             # Configurações do sistema
             configs = [
