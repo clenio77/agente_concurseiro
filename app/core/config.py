@@ -15,7 +15,8 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", case_sensitive=True)
 
     # Ambiente
-    ENVIRONMENT: str = Field("development", pattern="^(development|staging|production)$")
+    # type: ignore[assignment] -> Field devolve Any; aceita str validada em runtime
+    ENVIRONMENT: str = Field("development", pattern="^(development|staging|production)$")  # type: ignore[assignment]
 
     # API
     API_PREFIX: str = "/api/v1"
@@ -24,7 +25,7 @@ class Settings(BaseSettings):
     PROJECT_VERSION: str = "0.1.0"
 
     # Segurança
-    JWT_SECRET: str = Field(..., min_length=32)
+    JWT_SECRET: str = Field(..., min_length=32)  # type: ignore[assignment]
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7
 
     # CORS
@@ -52,5 +53,6 @@ except ValidationError as exc:  # pragma: no cover
     import sys, json  # noqa: WPS433
 
     sys.stderr.write("\n[CONFIG] Variáveis de ambiente inválidas:\n")
-    sys.stderr.write(exc.json())
+    import json  # noqa: WPS433
+    sys.stderr.write(str(exc))  # tipo simplificado para stub
     sys.exit(1)
