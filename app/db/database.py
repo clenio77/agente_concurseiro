@@ -177,7 +177,7 @@ class DatabaseManager:
         """Obtém estatísticas do banco"""
         try:
             with self.get_session() as session:
-                from .models import User, MockExam, Essay, Question
+                from app.db.models import User, MockExam, Essay, Question  # noqa: WPS433
                 
                 stats = {
                     "users_count": session.query(User).count(),
