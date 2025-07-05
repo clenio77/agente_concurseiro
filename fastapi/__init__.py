@@ -14,7 +14,8 @@ from typing import Any, Callable, Dict
 class FastAPI:  # noqa: D101
     def __init__(self, *args: Any, **kwargs: Any) -> None:  # noqa: D401
         self.routes: Dict[str, Callable] = {}
-        self._middlewares: list[Callable] = []
+        # Armazena pares (classe_middleware, opções) apenas para fins de teste.
+        self._middlewares: list[object] = []
         self.dependency_overrides: Dict = {}
 
     # Decorador para middlewares
@@ -57,7 +58,7 @@ class FastAPI:  # noqa: D101
 
     def add_middleware(self, middleware_cls, **options):  # noqa: D401
         """Registra middleware fictício (apenas armazena referência)."""
-        self._middlewares.append((middleware_cls, options))
+        self._middlewares.append((middleware_cls, options))  # type: ignore[arg-type]
 
     # Método responsável pelo TestClient stub
     def _handle_request(self, method: str, path: str, data: Any | None = None):
