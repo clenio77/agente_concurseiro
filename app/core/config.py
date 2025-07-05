@@ -1,7 +1,7 @@
 import secrets
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import AnyHttpUrl, BaseSettings, EmailStr, PostgresDsn, validator
+from pydantic import AnyHttpUrl, BaseSettings, EmailStr, PostgresDsn, validator, ValidationError
 
 class Settings(BaseSettings):
     """
@@ -32,6 +32,13 @@ class Settings(BaseSettings):
     
     # Banco de Dados
     DATABASE_URI: str = "sqlite:///./app.db"
+
+    # Validações adicionais
+    @validator("DATABASE_URI")
+    def validate_database_uri(cls, v):  # noqa: D401
+        if not v.startswith(("sqlite:///", "postgresql://")):
+            raise ValueError("DATABASE_URI deve começar com sqlite:/// ou postgresql://")
+        return v
     SQL_ECHO: bool = False
     CREATE_TABLES_ON_STARTUP: bool = True
     INITIALIZE_DB: bool = True

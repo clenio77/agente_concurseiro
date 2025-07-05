@@ -12,6 +12,37 @@ from typing import Generator
 
 from .models import Base
 
+# ---------------------------------------------------------------------------
+# Configurações de retry (backoff exponencial simples)
+# ---------------------------------------------------------------------------
+
+import functools
+import time
+
+
+def _retry(max_attempts: int = 5, delay: float = 1.0):  # noqa: D401
+    """Decorador de retry com backoff exponencial."""
+
+    def decorator(fn):
+        @functools.wraps(fn)
+        def wrapper(*args, **kwargs):
+            attempt = 0
+            sleep = delay
+            while True:
+                try:
+                    return fn(*args, **kwargs)
+                except Exception as exc:  # noqa: BLE001
+                    attempt += 1
+                    if attempt >= max_attempts:
+                        raise
+                    logging.warning("%s falhou (tentativa %s/%s): %s", fn.__name__, attempt, max_attempts, exc)
+                    time.sleep(sleep)
+                    sleep *= 2  # backoff exponencial
+
+        return wrapper
+
+    return decorator
+
 # Configuração de logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -54,6 +85,7 @@ class DatabaseManager:
             os.makedirs(os.path.dirname(db_path), exist_ok=True)
             return f"sqlite:///{db_path}"
     
+    @_retry(max_attempts=5, delay=1.0)
     def _create_engine(self):
         """Cria engine do SQLAlchemy"""
         
@@ -129,6 +161,7 @@ class DatabaseManager:
         """Obtém sessão síncrona (para uso em Streamlit)"""
         return self.SessionLocal()
     
+    @_retry(max_attempts=3, delay=0.5)
     def health_check(self) -> bool:
         """Verifica saúde do banco de dados"""
         try:
