@@ -14,6 +14,16 @@ from typing import Any, Callable, Dict
 class FastAPI:  # noqa: D101
     def __init__(self, *args: Any, **kwargs: Any) -> None:  # noqa: D401
         self.routes: Dict[str, Callable] = {}
+        self._middlewares: list[Callable] = []
+        self.dependency_overrides: Dict = {}
+
+    # Decorador para middlewares
+    def middleware(self, _type: str):  # noqa: D401
+        def wrapper(func: Callable):
+            self._middlewares.append(func)
+            return func
+
+        return wrapper
 
     def include_router(self, router: "APIRouter", prefix: str | None = None, **_kwargs):  # noqa: D401
         # Mescla rotas do roteador ao app
@@ -95,6 +105,13 @@ class _Response:  # noqa: D101
 class TestClient:  # noqa: D101
     def __init__(self, app: FastAPI):
         self.app = app
+
+    # Context manager
+    def __enter__(self):  # noqa: D401
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):  # noqa: D401
+        return False
 
     # Métodos HTTP simples
     def get(self, path: str, **kwargs):  # noqa: D401
@@ -195,6 +212,29 @@ class _StatusModule(types.ModuleType):  # noqa: D101
 
 status = _StatusModule()
 sys.modules["fastapi.status"] = status
+
+# -------------------------------------------------------------------------
+# Submódulo responses
+# -------------------------------------------------------------------------
+
+
+class Response(dict):  # noqa: D101
+    def __init__(self, content=None, status_code: int = 200):  # noqa: D401
+        super().__init__(content or {})
+        self.status_code = status_code
+
+
+responses_module = types.ModuleType("fastapi.responses")
+setattr(responses_module, "Response", Response)
+
+
+class JSONResponse(Response):  # noqa: D101
+    def __init__(self, content=None, status_code: int = 200):  # noqa: D401
+        super().__init__(content, status_code)
+
+
+setattr(responses_module, "JSONResponse", JSONResponse)
+sys.modules["fastapi.responses"] = responses_module
 
 __all__ = [
     "FastAPI",

@@ -1,0 +1,9 @@
+{
+  "test@example.com": {
+    "id": "b4a8c314b8a4a9a89f25c1628efead66",
+    "email": "test@example.com",
+    "username": "testuser",
+    "password_hash": "ffc121a2210958bf74e5a874668f3d978d24b6a8241496ccff3c0ea245e4f126",
+    "full_name": "Usuário Teste"
+  }
+}

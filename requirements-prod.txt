@@ -1,4 +1,6 @@
 # Dependências essenciais para produção - Agente Concurseiro
+# Versões travadas para builds reproduzíveis
+# Data: 2025-07-05
 
 # Backend/API
 fastapi==0.104.1
@@ -55,6 +57,9 @@ python-dateutil==2.8.2
 python-dotenv==1.0.0
 click==8.1.7
 rich==13.7.0
+
+# Logging estruturado
+structlog==24.1.0
 
 # Busca Web
 duckduckgo-search>=6.2.0,<8.0.0

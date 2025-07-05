@@ -56,4 +56,11 @@ def test_get_user(client, token_headers, test_user):
     """Teste de obtenção de usuário por ID."""
     response = client.get(
         f"{settings.API_PREFIX}/users/{test_user.id}",
-       
+        headers=token_headers,
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    user = response.json()
+    assert user["id"] == str(test_user.id)
+    assert user["email"] == test_user.email
+   
