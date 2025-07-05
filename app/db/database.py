@@ -10,7 +10,7 @@ from contextlib import contextmanager
 import logging
 from typing import Generator
 
-from .models import Base
+from app.db.base import Base  # noqa: WPS433 (importa Base único)
 
 # ---------------------------------------------------------------------------
 # Configurações de retry (backoff exponencial simples)
