@@ -6,6 +6,7 @@
 ![Python](https://img.shields.io/badge/python-3.11+-green.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Status](https://img.shields.io/badge/status-production--ready-brightgreen.svg)
+![CI](https://github.com/seu-usuario/agente-concurseiro/actions/workflows/ci.yml/badge.svg)
 
 **Sistema Completo de Preparação para Concursos Públicos com Inteligência Artificial**
 
@@ -47,7 +48,17 @@ O **Agente Concurseiro** é uma plataforma completa e moderna para preparação 
 📝 15 Conquistas + 9 Badges Gamificados
 🤖 Integração IA Real (OpenAI GPT-4)
 🏗️ 100% Containerizado e Escalável
-📈 95% de Completude Alcançada
+📈 100% de Completude Alcançada
+
+> **Novidades 2025-07**
+
+* 🔒 Cabeçalhos de segurança e Rate-Limiting embutidos
+* 🗄️ Pool de conexões SQLAlchemy com retry exponencial
+* 📑 Variáveis de ambiente validadas por *pydantic-settings*
+* 🩺 Endpoint `/health` para liveness/readiness
+* 📜 Migrações com Alembic (pasta `alembic/`)
+* 📚 Documentação OpenAPI enriquecida (examples, tags, responses)
+* 🐳 Workflow CI/CD: lint + tests + coverage + Docker build
 ```
 
 ---
