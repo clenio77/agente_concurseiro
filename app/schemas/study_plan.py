@@ -1,8 +1,9 @@
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 from uuid import UUID
 
 from pydantic import BaseModel
+
 
 class StudyPlanBase(BaseModel):
     """
@@ -51,6 +52,6 @@ class StudyPlan(StudyPlanBase):
     is_active: bool
     created_at: datetime
     updated_at: datetime
-    
+
     class Config:
         orm_mode = True

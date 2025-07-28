@@ -1,14 +1,9 @@
-import requests
-from bs4 import BeautifulSoup
 import json
 import re
 import time
-import os
-from typing import List, Dict, Optional
 from datetime import datetime
-from urllib.parse import urljoin, urlparse
-import PyPDF2
-from io import BytesIO
+from typing import Dict, List
+
 
 class WebSearchTool:
     def __init__(self):
@@ -88,6 +83,11 @@ class WebSearchTool:
         }
 
         return search_summary
+
+    def search_exams(self, cargo: str, concurso: str, banca: str, cidade: str,
+                    max_results: int = 10) -> Dict:
+        """Alias para search_exam_content para compatibilidade"""
+        return self.search_exam_content(cargo, concurso, banca, cidade, max_results)
 
     def _simulate_realistic_search(self, query: str, max_results: int) -> List[Dict]:
         """Simula busca mais realista baseada em sites reais de concursos"""

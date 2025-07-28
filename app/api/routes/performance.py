@@ -10,11 +10,12 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
 from app.db.base import get_db
-from app.db.models.performance import PerformanceRecord
-from app.db.models.study_plan import StudyPlan
-from app.db.models.user import User
+from app.db.models import StudyPlan, User
+from app.db.models import UserStats as PerformanceRecord
 from app.schemas.performance import (
     PerformanceRecord as PerformanceRecordSchema,
+)
+from app.schemas.performance import (
     PerformanceRecordCreate,
     PerformanceRecordUpdate,
     PerformanceStats,
@@ -64,7 +65,7 @@ def create_performance_record(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Plano de estudos não encontrado",
             )
-    
+
     # Criar registro de desempenho
     record = PerformanceRecord(
         user_id=current_user.id,
@@ -92,14 +93,14 @@ def get_performance_stats(
     """
     # Implementar lógica para calcular estatísticas de desempenho
     # Este é um exemplo simplificado
-    
+
     # Total de tempo de estudo
     records = db.query(PerformanceRecord).filter(
         PerformanceRecord.user_id == current_user.id
     ).all()
-    
+
     total_study_time = sum(record.study_time_minutes for record in records)
-    
+
     # Distribuição por matéria
     subject_distribution = {}
     for record in records:
@@ -110,7 +111,7 @@ def get_performance_stats(
                 subject_distribution[subject_name] += subject_time
             else:
                 subject_distribution[subject_name] = subject_time
-    
+
     # Média de pontuação em quizzes
     quiz_scores = []
     for record in records:
@@ -118,31 +119,31 @@ def get_performance_stats(
             for quiz in record.quiz_scores:
                 if "score" in quiz:
                     quiz_scores.append(quiz["score"])
-    
+
     quiz_average_score = sum(quiz_scores) / len(quiz_scores) if quiz_scores else 0
-    
+
     # Taxa de retenção de flashcards
     flashcard_retention = []
     for record in records:
         if record.flashcard_stats and "retention_rate" in record.flashcard_stats:
             flashcard_retention.append(record.flashcard_stats["retention_rate"])
-    
+
     flashcard_retention_rate = sum(flashcard_retention) / len(flashcard_retention) if flashcard_retention else 0
-    
+
     # Sequência de estudo (exemplo simplificado)
     study_streak = 5
-    
+
     # Progresso semanal e mensal (exemplo simplificado)
     weekly_progress = [
         {"week": "Semana 1", "study_time": 300, "quiz_score": 85},
         {"week": "Semana 2", "study_time": 350, "quiz_score": 88},
     ]
-    
+
     monthly_progress = [
         {"month": "Janeiro", "study_time": 1200, "quiz_score": 82},
         {"month": "Fevereiro", "study_time": 1500, "quiz_score": 87},
     ]
-    
+
     return {
         "total_study_time": total_study_time,
         "subject_distribution": subject_distribution,
@@ -167,13 +168,13 @@ def read_performance_record(
         PerformanceRecord.id == record_id,
         PerformanceRecord.user_id == current_user.id
     ).first()
-    
+
     if not record:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Registro de desempenho não encontrado",
         )
-    
+
     return record
 
 @router.put("/{record_id}", response_model=PerformanceRecordSchema)
@@ -191,13 +192,13 @@ def update_performance_record(
         PerformanceRecord.id == record_id,
         PerformanceRecord.user_id == current_user.id
     ).first()
-    
+
     if not record:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Registro de desempenho não encontrado",
         )
-    
+
     # Atualizar campos
     if record_in.date is not None:
         record.date = record_in.date
@@ -211,7 +212,7 @@ def update_performance_record(
         record.flashcard_stats = record_in.flashcard_stats
     if record_in.notes is not None:
         record.notes = record_in.notes
-    
+
     db.add(record)
     db.commit()
     db.refresh(record)
@@ -231,13 +232,13 @@ def delete_performance_record(
         PerformanceRecord.id == record_id,
         PerformanceRecord.user_id == current_user.id
     ).first()
-    
+
     if not record:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Registro de desempenho não encontrado",
         )
-    
+
     db.delete(record)
     db.commit()
     return record

@@ -5,13 +5,23 @@ Define a estrutura das tabelas de quizzes e suas questões, além dos relacionam
 
 import uuid
 from datetime import datetime
-from typing import List
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Float, Integer, String, Text, JSON
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from app.db.base import Base
+
 
 class Quiz(Base):
     """
@@ -19,7 +29,7 @@ class Quiz(Base):
     Representa um simulado ou teste criado pelo usuário, com vínculo a plano de estudo e questões.
     """
     __tablename__ = "quizzes"
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     study_plan_id = Column(UUID(as_uuid=True), ForeignKey("study_plans.id"), nullable=True)
@@ -33,7 +43,7 @@ class Quiz(Base):
     completed_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     # Relacionamentos com usuário, plano de estudo e questões
     user = relationship("User", back_populates="quizzes")
     study_plan = relationship("StudyPlan", back_populates="quizzes")
@@ -45,7 +55,7 @@ class QuizQuestion(Base):
     Representa uma questão de múltipla escolha vinculada a um quiz.
     """
     __tablename__ = "quiz_questions"
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     quiz_id = Column(UUID(as_uuid=True), ForeignKey("quizzes.id"), nullable=False)
     text = Column(Text, nullable=False)
@@ -58,6 +68,6 @@ class QuizQuestion(Base):
     is_correct = Column(Boolean, nullable=True)
     time_spent_seconds = Column(Integer, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
-    
+
     # Relacionamento com o quiz
     quiz = relationship("Quiz", back_populates="questions")

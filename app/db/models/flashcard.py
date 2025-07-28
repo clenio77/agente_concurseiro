@@ -5,13 +5,21 @@ Define a estrutura das tabelas de flashcards e suas revisões, além dos relacio
 
 import uuid
 from datetime import datetime
-from typing import List
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text, Float
+from sqlalchemy import (
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from app.db.base import Base
+
 
 class Flashcard(Base):
     """
@@ -19,7 +27,7 @@ class Flashcard(Base):
     Representa um cartão de memorização para estudo, com campos para repetição espaçada.
     """
     __tablename__ = "flashcards"
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     front = Column(Text, nullable=False)
@@ -31,7 +39,7 @@ class Flashcard(Base):
     ease_factor = Column(Float, nullable=False, default=2.5)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     # Relacionamentos com usuário e revisões
     user = relationship("User", back_populates="flashcards")
     reviews = relationship("FlashcardReview", back_populates="flashcard", cascade="all, delete-orphan")
@@ -42,11 +50,11 @@ class FlashcardReview(Base):
     Representa uma revisão feita pelo usuário, usada para o algoritmo de repetição espaçada.
     """
     __tablename__ = "flashcard_reviews"
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     flashcard_id = Column(UUID(as_uuid=True), ForeignKey("flashcards.id"), nullable=False)
     quality = Column(Integer, nullable=False)  # 0-5
     review_date = Column(DateTime, default=datetime.utcnow)
-    
+
     # Relacionamento com o flashcard
     flashcard = relationship("Flashcard", back_populates="reviews")

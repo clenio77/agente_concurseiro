@@ -1,361 +1,431 @@
+import hashlib
 import json
-import random
-from typing import Dict, List
-import requests
-from datetime import datetime
+import logging
 import os
+import time
+from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+import requests
+
+# Configurar logger local
+logger = logging.getLogger(__name__)
+
+# Exceções locais
+class ExternalServiceError(Exception):
+    def __init__(self, service: str, message: str, details: Dict = None):
+        self.service = service
+        self.message = message
+        self.details = details or {}
+        super().__init__(self.message)
+
+class RateLimitError(Exception):
+    def __init__(self, service: str, retry_after: int, details: Dict = None):
+        self.service = service
+        self.retry_after = retry_after
+        self.details = details or {}
+        super().__init__(f"Rate limit exceeded for {service}")
+
+def log_agent_execution(logger, agent_name: str, action: str, duration: float, success: bool, error: str = None):
+    """Função local para logging de execução de agentes"""
+    level = logging.INFO if success else logging.ERROR
+    message = f"Agent {agent_name} executed {action} in {duration:.2f}s"
+    if error:
+        message += f" with error: {error}"
+    logger.log(level, message)
 
 class QuestionAPITool:
+    """Ferramenta para integração com APIs de questões de concursos"""
+
     def __init__(self):
         self.name = "QuestionAPITool"
-        self.description = "Integra com banco de questões local e APIs externas"
-        self.api_base_url = "https://api.example.com/questions"  # URL fictícia
-        self.question_bank = self._load_question_bank()
+        self.description = "Ferramenta para buscar questões de concursos em APIs externas"
 
-    def _load_question_bank(self) -> Dict:
-        """Carrega banco de questões local"""
-        try:
-            with open('data/questions/question_bank.json', 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                return data.get('questions', {})
-        except FileNotFoundError:
-            print("Arquivo de banco de questões não encontrado. Usando questões simuladas.")
-            return self._get_simulated_questions()
-        except Exception as e:
-            print(f"Erro ao carregar banco de questões: {e}")
-            return self._get_simulated_questions()
-
-    def _get_simulated_questions(self) -> Dict:
-        """Questões simuladas como fallback"""
-        return {
-            'Português': [
-                {
-                    'id': 'sim_port_001',
-                    'text': 'Qual alternativa está correta?',
-                    'options': [
-                        {'id': 'A', 'text': 'Opção A'},
-                        {'id': 'B', 'text': 'Opção B'},
-                        {'id': 'C', 'text': 'Opção C'},
-                        {'id': 'D', 'text': 'Opção D'}
-                    ],
-                    'correct_answer': 'A',
-                    'explanation': 'Explicação simulada.',
-                    'difficulty': 'medium',
-                    'subject': 'Português',
-                    'topic': 'Simulado',
-                    'banca': 'CESPE',
-                    'year': 2023
+        # Configurações das APIs
+        self.apis = {
+            "qconcursos": {
+                "base_url": "https://api.qconcursos.com",
+                "api_key": None,  # Configurar via variável de ambiente
+                "rate_limit": {"requests": 100, "window": 3600},  # 100 requests/hora
+                "endpoints": {
+                    "search": "/questions/search",
+                    "details": "/questions/{id}",
+                    "subjects": "/subjects",
+                    "exams": "/exams"
                 }
-            ]
+            },
+            "cespe": {
+                "base_url": "https://api.cespe.unb.br",
+                "api_key": None,
+                "rate_limit": {"requests": 50, "window": 3600},
+                "endpoints": {
+                    "questions": "/questions",
+                    "exams": "/exams"
+                }
+            },
+            "fcc": {
+                "base_url": "https://api.fcc.org.br",
+                "api_key": None,
+                "rate_limit": {"requests": 80, "window": 3600},
+                "endpoints": {
+                    "questions": "/questions",
+                    "exams": "/exams"
+                }
+            }
         }
 
-    def fetch_questions(self, subjects: List[str], difficulty: str = "medium",
-                       count: int = 10, banca: str = None) -> List[Dict]:
-        """Busca questões do banco local filtradas por critérios"""
-        selected_questions = []
+        # Cache local para reduzir chamadas à API
+        self.cache = {}
+        self.cache_ttl = 3600  # 1 hora
 
-        # Coletar todas as questões disponíveis das matérias solicitadas
-        available_questions = []
+        # Controle de rate limiting
+        self.request_history = {}
 
+        # Headers padrão
+        self.default_headers = {
+            "User-Agent": "AgenteConcurseiro/2.0",
+            "Accept": "application/json",
+            "Content-Type": "application/json"
+        }
+
+    def _get_api_key(self, api_name: str) -> Optional[str]:
+        """Obtém chave da API do ambiente"""
+        env_var = f"{api_name.upper()}_API_KEY"
+        return os.getenv(env_var)
+
+    def _check_rate_limit(self, api_name: str) -> bool:
+        """Verifica rate limit para a API"""
+        if api_name not in self.request_history:
+            self.request_history[api_name] = []
+
+        current_time = time.time()
+        window_start = current_time - self.apis[api_name]["rate_limit"]["window"]
+
+        # Limpar histórico antigo
+        self.request_history[api_name] = [
+            req_time for req_time in self.request_history[api_name]
+            if req_time > window_start
+        ]
+
+        # Verificar se excedeu o limite
+        if len(self.request_history[api_name]) >= self.apis[api_name]["rate_limit"]["requests"]:
+            return False
+
+        # Adicionar requisição atual
+        self.request_history[api_name].append(current_time)
+        return True
+
+    def _get_cache_key(self, api_name: str, params: Dict[str, Any]) -> str:
+        """Gera chave de cache"""
+        param_str = json.dumps(params, sort_keys=True)
+        return f"{api_name}:{hashlib.md5(param_str.encode()).hexdigest()}"
+
+    def _get_from_cache(self, cache_key: str) -> Optional[Dict[str, Any]]:
+        """Obtém dados do cache"""
+        if cache_key in self.cache:
+            cached_data, timestamp = self.cache[cache_key]
+            if time.time() - timestamp < self.cache_ttl:
+                return cached_data
+            else:
+                del self.cache[cache_key]
+        return None
+
+    def _save_to_cache(self, cache_key: str, data: Dict[str, Any]):
+        """Salva dados no cache"""
+        self.cache[cache_key] = (data, time.time())
+
+    def _make_request(self, api_name: str, endpoint: str, params: Dict[str, Any] = None) -> Dict[str, Any]:
+        """Faz requisição para a API"""
+
+        # Verificar rate limit
+        if not self._check_rate_limit(api_name):
+            raise RateLimitError(
+                service=api_name,
+                retry_after=self.apis[api_name]["rate_limit"]["window"],
+                details={"api": api_name, "endpoint": endpoint}
+            )
+
+        # Obter configurações da API
+        api_config = self.apis[api_name]
+        api_key = self._get_api_key(api_name)
+
+        # Preparar headers
+        headers = self.default_headers.copy()
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
+
+        # Preparar URL
+        url = f"{api_config['base_url']}{endpoint}"
+
+        # Fazer requisição
+        try:
+            start_time = time.time()
+
+            if params:
+                response = requests.get(url, headers=headers, params=params, timeout=30)
+            else:
+                response = requests.get(url, headers=headers, timeout=30)
+
+            duration = time.time() - start_time
+
+            # Log da requisição
+            log_agent_execution(
+                logger,
+                f"{api_name}_api",
+                endpoint,
+                duration,
+                response.status_code < 400,
+                None if response.status_code < 400 else f"HTTP {response.status_code}"
+            )
+
+            # Verificar status da resposta
+            if response.status_code == 429:
+                raise RateLimitError(
+                    service=api_name,
+                    retry_after=int(response.headers.get("Retry-After", 300)),
+                    details={"api": api_name, "endpoint": endpoint}
+                )
+
+            response.raise_for_status()
+
+            return response.json()
+
+        except requests.exceptions.RequestException as e:
+            raise ExternalServiceError(
+                service=api_name,
+                message=f"Erro na requisição para {api_name}: {str(e)}",
+                details={"endpoint": endpoint, "params": params}
+            )
+
+    def search_questions(self, api_name: str, query: str, filters: Dict[str, Any] = None) -> Dict[str, Any]:
+        """Busca questões na API especificada"""
+
+        if api_name not in self.apis:
+            raise ValueError(f"API '{api_name}' não suportada")
+
+        # Preparar parâmetros
+        params = {"q": query}
+        if filters:
+            params.update(filters)
+
+        # Verificar cache
+        cache_key = self._get_cache_key(api_name, params)
+        cached_result = self._get_from_cache(cache_key)
+        if cached_result:
+            logger.info(f"Retrieved from cache: {api_name} search for '{query}'")
+            return cached_result
+
+        # Fazer requisição
+        endpoint = self.apis[api_name]["endpoints"]["search"]
+        result = self._make_request(api_name, endpoint, params)
+
+        # Salvar no cache
+        self._save_to_cache(cache_key, result)
+
+        return result
+
+    def get_question_details(self, api_name: str, question_id: str) -> Dict[str, Any]:
+        """Obtém detalhes de uma questão específica"""
+
+        if api_name not in self.apis:
+            raise ValueError(f"API '{api_name}' não suportada")
+
+        # Verificar cache
+        cache_key = f"{api_name}:question:{question_id}"
+        cached_result = self._get_from_cache(cache_key)
+        if cached_result:
+            return cached_result
+
+        # Fazer requisição
+        endpoint = self.apis[api_name]["endpoints"]["details"].format(id=question_id)
+        result = self._make_request(api_name, endpoint)
+
+        # Salvar no cache
+        self._save_to_cache(cache_key, result)
+
+        return result
+
+    def get_subjects(self, api_name: str) -> List[Dict[str, Any]]:
+        """Obtém lista de disciplinas disponíveis"""
+
+        if api_name not in self.apis:
+            raise ValueError(f"API '{api_name}' não suportada")
+
+        # Verificar cache
+        cache_key = f"{api_name}:subjects"
+        cached_result = self._get_from_cache(cache_key)
+        if cached_result:
+            return cached_result
+
+        # Fazer requisição
+        endpoint = self.apis[api_name]["endpoints"]["subjects"]
+        result = self._make_request(api_name, endpoint)
+
+        # Salvar no cache
+        self._save_to_cache(cache_key, result)
+
+        return result
+
+    def get_exams(self, api_name: str, filters: Dict[str, Any] = None) -> List[Dict[str, Any]]:
+        """Obtém lista de concursos disponíveis"""
+
+        if api_name not in self.apis:
+            raise ValueError(f"API '{api_name}' não suportada")
+
+        # Verificar cache
+        cache_key = self._get_cache_key(f"{api_name}:exams", filters or {})
+        cached_result = self._get_from_cache(cache_key)
+        if cached_result:
+            return cached_result
+
+        # Fazer requisição
+        endpoint = self.apis[api_name]["endpoints"]["exams"]
+        result = self._make_request(api_name, endpoint, filters)
+
+        # Salvar no cache
+        self._save_to_cache(cache_key, result)
+
+        return result
+
+    def create_mock_exam(self, api_name: str, subjects: List[str], num_questions: int = 20) -> Dict[str, Any]:
+        """Cria um simulado com questões da API"""
+
+        questions = []
+
+        # Buscar questões para cada disciplina
         for subject in subjects:
-            if subject in self.question_bank:
-                subject_questions = self.question_bank[subject]
+            try:
+                subject_questions = self.search_questions(
+                    api_name,
+                    subject,
+                    {"limit": num_questions // len(subjects)}
+                )
 
-                # Filtrar por dificuldade se especificada
-                if difficulty != "mixed":
-                    subject_questions = [q for q in subject_questions if q.get('difficulty') == difficulty]
+                if "questions" in subject_questions:
+                    questions.extend(subject_questions["questions"])
 
-                # Filtrar por banca se especificada
-                if banca:
-                    subject_questions = [q for q in subject_questions if q.get('banca', '').upper() == banca.upper()]
-
-                available_questions.extend(subject_questions)
-
-        # Se não há questões suficientes, gerar questões simuladas
-        if len(available_questions) < count:
-            print(f"Apenas {len(available_questions)} questões disponíveis. Gerando questões simuladas para completar.")
-
-            # Usar questões disponíveis
-            selected_questions.extend(available_questions)
-
-            # Gerar questões simuladas para completar
-            remaining_count = count - len(available_questions)
-            simulated_questions = self._generate_simulated_questions(subjects, difficulty, banca, remaining_count)
-            selected_questions.extend(simulated_questions)
-        else:
-            # Selecionar questões aleatoriamente
-            selected_questions = random.sample(available_questions, count)
+            except Exception as e:
+                logger.warning(f"Erro ao buscar questões de {subject}: {e}")
+                continue
 
         # Embaralhar questões
-        random.shuffle(selected_questions)
+        import random
+        random.shuffle(questions)
 
-        return selected_questions
+        # Limitar número de questões
+        questions = questions[:num_questions]
 
-    def _generate_simulated_questions(self, subjects: List[str], difficulty: str,
-                                    banca: str, count: int) -> List[Dict]:
-        """Gera questões simuladas quando não há questões suficientes no banco"""
-        simulated_questions = []
-
-        question_templates = {
-            'Português': [
-                "Assinale a alternativa que apresenta ERRO de concordância:",
-                "Qual das frases abaixo está CORRETA quanto à regência verbal?",
-                "Identifique a alternativa com uso INCORRETO da crase:",
-                "Marque a opção que contém ERRO de colocação pronominal:"
-            ],
-            'Matemática': [
-                "Resolva a equação: {equation}",
-                "Calcule o valor da expressão: {expression}",
-                "Em uma progressão aritmética com primeiro termo {a1} e razão {r}, qual é o {n}º termo?",
-                "Se {percentage}% de {number} é {result}, qual é o valor de {variable}?"
-            ],
-            'Direito': [
-                "Segundo a Constituição Federal, é CORRETO afirmar:",
-                "Sobre os princípios da Administração Pública:",
-                "De acordo com a legislação vigente:",
-                "Quanto aos direitos fundamentais:"
-            ],
-            'Informática': [
-                "No Microsoft Word, qual a função da tecla de atalho {shortcut}?",
-                "Qual protocolo é usado para {purpose}?",
-                "Em relação à segurança da informação:",
-                "Sobre redes de computadores:"
-            ]
+        return {
+            "exam_id": f"mock_{api_name}_{int(time.time())}",
+            "title": f"Simulado {api_name.upper()}",
+            "subjects": subjects,
+            "num_questions": len(questions),
+            "questions": questions,
+            "created_at": datetime.utcnow().isoformat()
         }
 
-        for i in range(count):
-            subject = random.choice(subjects)
+    def get_question_statistics(self, api_name: str, question_id: str) -> Dict[str, Any]:
+        """Obtém estatísticas de uma questão (se disponível)"""
 
-            # Selecionar template de questão
-            templates = question_templates.get(subject, ["Questão sobre {subject}:"])
-            question_text = random.choice(templates)
+        try:
+            question_data = self.get_question_details(api_name, question_id)
 
-            # Personalizar questão baseada na matéria
-            if subject == 'Matemática':
-                question_text = question_text.format(
-                    equation=f"{random.randint(2,5)}x + {random.randint(1,10)} = {random.randint(15,50)}",
-                    expression=f"({random.randint(2,5)}² × {random.randint(2,4)}) ÷ {random.randint(2,6)}",
-                    a1=random.randint(1,10),
-                    r=random.randint(2,5),
-                    n=random.randint(5,15),
-                    percentage=random.randint(10,50),
-                    number=random.randint(100,500),
-                    result=random.randint(20,100),
-                    variable="x"
-                )
-            elif subject == 'Informática':
-                shortcuts = ['Ctrl+C', 'Ctrl+V', 'Ctrl+Z', 'Ctrl+S', 'Alt+Tab']
-                purposes = ['transferência segura de arquivos', 'envio de emails', 'navegação web']
-                question_text = question_text.format(
-                    shortcut=random.choice(shortcuts),
-                    purpose=random.choice(purposes)
-                )
-
-            # Gerar opções de resposta
-            options = []
-            for j, letter in enumerate(['A', 'B', 'C', 'D']):
-                options.append({
-                    'id': letter,
-                    'text': f"Opção {letter} - {subject}"
-                })
-
-            question = {
-                'id': f'sim_{subject.lower()[:3]}_{i+1000}',
-                'text': question_text,
-                'options': options,
-                'correct_answer': random.choice(['A', 'B', 'C', 'D']),
-                'explanation': f'Explicação simulada para questão de {subject}.',
-                'difficulty': difficulty,
-                'subject': subject,
-                'topic': 'Simulado',
-                'banca': banca or 'CESPE',
-                'year': 2023,
-                'source': 'Questão Simulada'
+            # Extrair estatísticas se disponíveis
+            stats = {
+                "question_id": question_id,
+                "api": api_name,
+                "difficulty": question_data.get("difficulty", "unknown"),
+                "success_rate": question_data.get("success_rate", 0),
+                "attempts": question_data.get("attempts", 0),
+                "correct_answers": question_data.get("correct_answers", 0),
+                "wrong_answers": question_data.get("wrong_answers", 0)
             }
 
-            simulated_questions.append(question)
+            return stats
 
-        return simulated_questions
-    
-    def generate_daily_quiz(self, study_plan: Dict, performance_history: List[Dict] = None) -> Dict:
-        """Gera um quiz diário com base no plano de estudos e histórico de desempenho"""
-        quiz = {
-            "date": datetime.now().strftime("%Y-%m-%d"),
-            "title": "Quiz Diário",
-            "questions": [],
-            "focus_subjects": [],
-            "difficulty": "medium",
-            "estimated_time": "15 minutos"
-        }
-        
-        # Determinar matérias de foco
-        focus_subjects = []
-        
-        if study_plan and "subject_distribution" in study_plan:
-            # Extrair todas as matérias
-            all_subjects = list(study_plan["subject_distribution"].keys())
-            
-            # Identificar matérias com baixo desempenho
-            low_performance_subjects = []
-            if performance_history and len(performance_history) > 0:
-                latest_performance = performance_history[-1]
-                if "subject_scores" in latest_performance:
-                    for subject, score in latest_performance["subject_scores"].items():
-                        if score < 70 and subject in all_subjects:
-                            low_performance_subjects.append(subject)
-            
-            # Priorizar matérias com baixo desempenho
-            if low_performance_subjects:
-                focus_subjects = low_performance_subjects[:3]  # Até 3 matérias com baixo desempenho
-            
-            # Completar com outras matérias se necessário
-            remaining_slots = 3 - len(focus_subjects)
-            if remaining_slots > 0:
-                other_subjects = [s for s in all_subjects if s not in focus_subjects]
-                if other_subjects:
-                    focus_subjects.extend(random.sample(other_subjects, min(remaining_slots, len(other_subjects))))
-        
-        # Se não houver matérias de foco, usar padrões
-        if not focus_subjects:
-            focus_subjects = ["Português", "Matemática", "Conhecimentos Específicos"]
-        
-        quiz["focus_subjects"] = focus_subjects
-        
-        # Determinar dificuldade
-        difficulty = "medium"
-        if performance_history and len(performance_history) > 0:
-            latest_performance = performance_history[-1]
-            overall_score = latest_performance.get("overall_score", 0)
-            
-            if overall_score >= 80:
-                difficulty = "hard"
-            elif overall_score <= 50:
-                difficulty = "easy"
-        
-        quiz["difficulty"] = difficulty
-        
-        # Buscar questões
-        questions = self.fetch_questions(
-            subjects=focus_subjects,
-            difficulty=difficulty,
-            count=10
-        )
-        
-        quiz["questions"] = questions
-        quiz["estimated_time"] = f"{len(questions) * 1.5:.0f} minutos"
-        
-        return quiz
-    
-    def submit_quiz_answers(self, quiz_id: str, answers: Dict[str, str]) -> Dict:
-        """Submete respostas de um quiz e retorna resultados"""
-        # Simulação de verificação de respostas
-        correct_count = 0
-        incorrect_count = 0
-        unanswered_count = 0
-        
-        # Gerar resultados simulados
-        results = {
-            "quiz_id": quiz_id,
-            "submission_date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            "total_questions": len(answers),
-            "correct_count": 0,
-            "incorrect_count": 0,
-            "unanswered_count": 0,
-            "score": 0,
-            "question_results": [],
-            "subject_scores": {}
-        }
-        
-        # Simular verificação de cada resposta
-        subject_correct = {}
-        subject_total = {}
-        
-        for question_id, answer in answers.items():
-            # Simular resposta correta (50% de chance)
-            is_correct = random.choice([True, False])
-            
-            # Simular matéria
-            subject = random.choice(["Português", "Matemática", "Conhecimentos Específicos"])
-            
-            # Atualizar contadores por matéria
-            if subject not in subject_total:
-                subject_total[subject] = 0
-                subject_correct[subject] = 0
-            
-            subject_total[subject] += 1
-            
-            if is_correct:
-                correct_count += 1
-                subject_correct[subject] += 1
-                results["question_results"].append({
-                    "question_id": question_id,
-                    "is_correct": True,
-                    "submitted_answer": answer,
-                    "correct_answer": answer,
-                    "subject": subject
-                })
-            else:
-                incorrect_count += 1
-                # Simular resposta correta diferente
-                correct_answer = random.choice(["a", "b", "c", "d", "e"])
-                while correct_answer == answer:
-                    correct_answer = random.choice(["a", "b", "c", "d", "e"])
-                
-                results["question_results"].append({
-                    "question_id": question_id,
-                    "is_correct": False,
-                    "submitted_answer": answer,
-                    "correct_answer": correct_answer,
-                    "subject": subject
-                })
-        
-        # Calcular pontuações por matéria
-        for subject in subject_total:
-            if subject_total[subject] > 0:
-                score = (subject_correct[subject] / subject_total[subject]) * 100
-                results["subject_scores"][subject] = round(score, 1)
-        
-        # Atualizar resultados gerais
-        results["correct_count"] = correct_count
-        results["incorrect_count"] = incorrect_count
-        results["unanswered_count"] = unanswered_count
-        results["score"] = round((correct_count / len(answers)) * 100, 1) if answers else 0
-        
-        return results
-    
-    def _run(self, action: str, params_json: str) -> str:
-        """Interface principal da ferramenta"""
-        try:
-            # Converter parâmetros JSON para dicionário
-            params = json.loads(params_json)
-            
-            # Executar ação solicitada
-            if action == "fetch_questions":
-                subjects = params.get("subjects", ["Português", "Matemática"])
-                difficulty = params.get("difficulty", "medium")
-                count = params.get("count", 10)
-                banca = params.get("banca")
-                
-                result = self.fetch_questions(subjects, difficulty, count, banca)
-            
-            elif action == "daily_quiz":
-                study_plan = params.get("study_plan", {})
-                performance_history = params.get("performance_history", [])
-                
-                result = self.generate_daily_quiz(study_plan, performance_history)
-            
-            elif action == "submit_answers":
-                quiz_id = params.get("quiz_id", "")
-                answers = params.get("answers", {})
-                
-                result = self.submit_quiz_answers(quiz_id, answers)
-            
-            else:
-                result = {"error": "Ação inválida"}
-            
-            return json.dumps(result, indent=2, ensure_ascii=False)
-            
         except Exception as e:
+            logger.error(f"Erro ao obter estatísticas da questão {question_id}: {e}")
+            return {
+                "question_id": question_id,
+                "api": api_name,
+                "error": str(e)
+            }
+
+    def _run(self, action: str, params_json: str) -> str:
+        """Método principal da ferramenta"""
+
+        try:
+            params = json.loads(params_json)
+            action = action.lower()
+
+            if action == "search_questions":
+                api_name = params.get("api_name", "qconcursos")
+                query = params.get("query", "")
+                filters = params.get("filters", {})
+
+                result = self.search_questions(api_name, query, filters)
+                return json.dumps(result, ensure_ascii=False)
+
+            elif action == "get_question_details":
+                api_name = params.get("api_name", "qconcursos")
+                question_id = params.get("question_id")
+
+                if not question_id:
+                    raise ValueError("question_id é obrigatório")
+
+                result = self.get_question_details(api_name, question_id)
+                return json.dumps(result, ensure_ascii=False)
+
+            elif action == "get_subjects":
+                api_name = params.get("api_name", "qconcursos")
+                result = self.get_subjects(api_name)
+                return json.dumps(result, ensure_ascii=False)
+
+            elif action == "get_exams":
+                api_name = params.get("api_name", "qconcursos")
+                filters = params.get("filters", {})
+                result = self.get_exams(api_name, filters)
+                return json.dumps(result, ensure_ascii=False)
+
+            elif action == "create_mock_exam":
+                api_name = params.get("api_name", "qconcursos")
+                subjects = params.get("subjects", [])
+                num_questions = params.get("num_questions", 20)
+
+                if not subjects:
+                    raise ValueError("subjects é obrigatório")
+
+                result = self.create_mock_exam(api_name, subjects, num_questions)
+                return json.dumps(result, ensure_ascii=False)
+
+            elif action == "get_question_statistics":
+                api_name = params.get("api_name", "qconcursos")
+                question_id = params.get("question_id")
+
+                if not question_id:
+                    raise ValueError("question_id é obrigatório")
+
+                result = self.get_question_statistics(api_name, question_id)
+                return json.dumps(result, ensure_ascii=False)
+
+            else:
+                return json.dumps({
+                    "error": f"Ação '{action}' não reconhecida",
+                    "available_actions": [
+                        "search_questions",
+                        "get_question_details",
+                        "get_subjects",
+                        "get_exams",
+                        "create_mock_exam",
+                        "get_question_statistics"
+                    ]
+                }, ensure_ascii=False)
+
+        except Exception as e:
+            logger.error(f"Erro na QuestionAPITool: {e}")
             return json.dumps({
-                'error': f'Erro na ferramenta de questões: {str(e)}'
-            }, indent=2, ensure_ascii=False)
+                "error": f"Erro na ferramenta: {str(e)}"
+            }, ensure_ascii=False)
+
+# Instância global
+question_api_tool = QuestionAPITool()

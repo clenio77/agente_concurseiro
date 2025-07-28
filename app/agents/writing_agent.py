@@ -4,7 +4,9 @@ Responsável por criar o agente que avalia e fornece feedback sobre redações.
 """
 
 from crewai import Agent
+
 from tools.writing_tool import WritingTool
+
 
 def create_writing_agent():
     """

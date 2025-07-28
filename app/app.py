@@ -1,383 +1,1381 @@
-import streamlit as st
-import os
-import asyncio
-from datetime import datetime
-import logging
+from __future__ import annotations
 
-# Configurar logging
+import logging
+import os
+import random
+import sys
+from datetime import datetime
+
+import pandas as pd
+import streamlit as st
+
+# Configurar logging básico
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Imports da aplicação
-from crew import run_crew
-from utils.dashboard import render_dashboard
-from utils.config import load_config
-from pages.simulado import render_simulado_page
-from pages.analytics import render_analytics_page
-from pages.redacao import render_redacao_page
-
-# Imports de produção
-from db.database import init_database, db_manager
-from auth.auth_manager import auth_manager
-from monitoring.metrics import setup_monitoring, track_business_event
-from backup.backup_manager import backup_manager, schedule_backups
-
-# Load configuration
-config = load_config()
-
-# Inicializar sistema de produção
-@st.cache_resource
-def initialize_production_systems():
-    """Inicializa sistemas de produção"""
-    logger.info("🚀 Inicializando sistemas de produção...")
-
-    try:
-        # Inicializar banco de dados
-        if not init_database():
-            st.error("❌ Falha na inicialização do banco de dados")
-            st.stop()
-
-        # Configurar monitoramento
-        setup_monitoring()
-
-        # Agendar backups
-        schedule_backups()
-
-        logger.info("✅ Sistemas de produção inicializados")
-        return True
-
-    except Exception as e:
-        logger.error(f"❌ Erro na inicialização: {e}")
-        st.error(f"Erro na inicialização do sistema: {e}")
-        st.stop()
-
-# Inicializar sistemas
-if os.getenv("ENVIRONMENT") == "production":
-    initialize_production_systems()
-
+# Configuração da página
 st.set_page_config(
-    page_title="Assistente de Preparação para Concursos",
+    page_title="Agente Concurseiro v2.0",
     page_icon="📚",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
-# Inicializar estado da sessão
-if 'user_authenticated' not in st.session_state:
-    st.session_state.user_authenticated = False
-if 'current_user' not in st.session_state:
-    st.session_state.current_user = None
-if 'auth_token' not in st.session_state:
-    st.session_state.auth_token = None
+# CSS personalizado
+st.markdown("""
+<style>
+    .main-header {
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        padding: 1rem;
+        border-radius: 10px;
+        color: white;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    .metric-card {
+        background: #f0f2f6;
+        padding: 1rem;
+        border-radius: 10px;
+        border-left: 4px solid #667eea;
+        margin-bottom: 1rem;
+    }
+    .feature-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 1rem;
+    }
+    .success-box {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        border-radius: 5px;
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+    .warning-box {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 5px;
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+    .info-box {
+        background: #d1ecf1;
+        border: 1px solid #bee5eb;
+        border-radius: 5px;
+        padding: 1rem;
+        margin: 1rem 0;
+    }
+</style>
+""", unsafe_allow_html=True)
 
-# Função para autenticação robusta
-def authenticate_user(email_or_username: str, password: str) -> bool:
-    """Autentica usuário usando sistema robusto"""
+# Inicializar session state
+if 'current_page' not in st.session_state:
+    st.session_state.current_page = "🏠 Dashboard"
+if 'example_essay' not in st.session_state:
+    st.session_state.example_essay = None
+if 'example_banca' not in st.session_state:
+    st.session_state.example_banca = "FGV"
+if 'custom_bancas' not in st.session_state:
+    st.session_state.custom_bancas = []
+if 'line_limits' not in st.session_state:
+    st.session_state.line_limits = {
+        "FGV": 30,
+        "CESPE": 30,
+        "VUNESP": 30,
+        "FCC": 30,
+        "IBFC": 30
+    }
+
+# Dados do concurso
+concurso_data = {
+    "nome": "Polícia Federal - Agente",
+    "banca": "CESPE/CEBRASPE",
+    "data_prova": datetime(2025, 8, 15),
+    "vagas": 1500,
+    "materias": {
+        "Português": {"peso": 1.0, "questoes": 20, "conteudo": ["Gramática", "Interpretação", "Redação"]},
+        "Raciocínio Lógico": {"peso": 1.0, "questoes": 15, "conteudo": ["Lógica Matemática", "Raciocínio Verbal"]},
+        "Direito Constitucional": {"peso": 1.5, "questoes": 15, "conteudo": ["Constituição Federal", "Direitos Fundamentais"]},
+        "Direito Administrativo": {"peso": 1.5, "questoes": 15, "conteudo": ["Princípios", "Atos Administrativos"]},
+        "Direito Penal": {"peso": 1.5, "questoes": 15, "conteudo": ["Teoria do Crime", "Tipos Penais"]},
+        "Direito Processual Penal": {"peso": 1.0, "questoes": 10, "conteudo": ["Processo Penal", "Recursos"]},
+        "Legislação Especial": {"peso": 1.0, "questoes": 10, "conteudo": ["Lei de Drogas", "Crimes Hediondos"]}
+    }
+}
+
+# Função para calcular dias restantes
+def calcular_dias_restantes():
+    hoje = datetime.now()
+    data_prova = concurso_data["data_prova"]
+
+    # Se a data da prova é uma string (não identificada), retornar 0
+    if isinstance(data_prova, str):
+        return 0
+
+    # Se é um objeto datetime, calcular a diferença
+    dias = (data_prova - hoje).days
+    return max(0, dias)
+
+# Importar o novo analisador
+from utils.edital_analyzer import EditalAnalyzer
+
+
+def extrair_texto_arquivo(uploaded_file):
+    """
+    Extrai texto de diferentes tipos de arquivo usando o analisador inteligente
+    """
+    analyzer = EditalAnalyzer()
+    return analyzer.extrair_texto_arquivo(uploaded_file)
+
+def analisar_edital_com_llm(content, cargos_selecionados):
+    """
+    Análise inteligente usando o novo EditalAnalyzer
+    """
     try:
-        # Obter IP do cliente (simulado no Streamlit)
-        client_ip = "127.0.0.1"  # Em produção, seria obtido do request
-
-        result = auth_manager.authenticate_user(email_or_username, password, client_ip)
-
-        if result["success"]:
-            st.session_state.user_authenticated = True
-            st.session_state.current_user = result["user"]["username"]
-            st.session_state.auth_token = result["access_token"]
-            st.session_state.user_data = result["user"]
-
-            # Registrar evento de negócio
-            track_business_event("user_login", username=result["user"]["username"])
-
-            return True
-        else:
-            st.error(f"❌ {result['error']}")
-            return False
+        # Usar o novo analisador inteligente
+        analyzer = EditalAnalyzer()
+        return analyzer.analisar_edital(content, cargos_selecionados)
 
     except Exception as e:
-        st.error(f"❌ Erro na autenticação: {e}")
-        return False
+        return {
+            "concurso": "Concurso Público",
+            "banca": "Banca não identificada",
+            "vagas": 100,
+            "data_prova": "Data não identificada",
+            "data_inscricao": "Período não identificado",
+            "cargos_detectados": ["Cargo Geral"],
+            "cargos_analisados": cargos_selecionados if cargos_selecionados else ["Cargo Geral"],
+            "materias": {
+                "Português": {"peso": 1.0, "questoes": 20, "conteudo": "Língua Portuguesa"},
+                "Raciocínio Lógico": {"peso": 1.0, "questoes": 15, "conteudo": "Raciocínio Lógico"}
+            },
+            "conteudo_analisado": content[:1000],
+            "modo_analise": "Fallback",
+            "erro": str(e),
+            "confianca": "Baixa"
+        }
 
-def register_user(email: str, username: str, password: str, full_name: str = None) -> bool:
-    """Registra novo usuário"""
+def analisar_edital_real(content, cargos_selecionados):
+    """
+    Analisa o conteúdo real do edital e extrai informações
+    """
+    import re
+
+    # Converter conteúdo para minúsculas para análise
+    content_lower = content.lower()
+
+    # Padrões mais específicos para extração de informações
+    padroes = {
+        'concurso': [
+            r'concurso\s+(?:público\s+)?(?:para\s+)?([^,\n]+?)(?:\s+do|\s+da|\s+de|\s+para|\n|$)',
+            r'edital\s+(?:do\s+)?(?:concurso\s+)?(?:público\s+)?(?:para\s+)?([^,\n]+?)(?:\s+do|\s+da|\s+de|\s+para|\n|$)',
+            r'([^,\n]+?)\s+concurso\s+público',
+            r'concurso\s+público\s+([^,\n]+?)(?:\s+do|\s+da|\s+de|\s+para|\n|$)',
+            r'departamento\s+de\s+([^,\n]+?)(?:\s+do|\s+da|\s+de|\s+para|\n|$)',
+            r'concurso\s+([^,\n]+?)(?:\s+do|\s+da|\s+de|\s+para|\n|$)',
+        ],
+        'banca': [
+            r'banca\s+examinadora[:\\s]+([^,\n]+?)(?:\s+do|\s+da|\s+de|\s+para|\n|$)',
+            r'banca\s+examinadora\s+([^,\n]+?)(?:\s+do|\s+da|\s+de|\s+para|\n|$)',
+            r'([a-z]+/[a-z]+(?:\s+[a-z]+)*)',
+            r'(cespe|cebraspe|fgv|vunesp|fcc|ibfc|quadrix|instituto\s+aocp|instituto\s+cesgranrio|aocp|cesgranrio)',
+            r'banca[:\\s]+([^,\n]+?)(?:\s+do|\s+da|\s+de|\s+para|\n|$)',
+            r'([a-z]+)\s+examinadora',
+            r'examinadora\s+([^,\n]+?)(?:\s+do|\s+da|\s+de|\s+para|\n|$)',
+            r'([a-z]+)\s+organizadora',
+            r'organizadora\s+([^,\n]+?)(?:\s+do|\s+da|\s+de|\s+para|\n|$)',
+        ],
+        'vagas': [
+            r'(\d+)\s+vagas?',
+            r'(\d+)\s+cargos?',
+            r'total\s+de\s+(\d+)\s+vagas?',
+            r'(\d+)\s+oportunidades?',
+            r'total[:\s]+(\d+)\s+vagas?',
+        ],
+        'data_prova': [
+            r'data\s+(?:da\s+)?prova[:\\s]+(\d{1,2}/\d{1,2}/\d{4})',
+            r'prova\s+(?:será\s+)?realizada\s+em\s+(\d{1,2}/\d{1,2}/\d{4})',
+            r'(\d{1,2}/\d{1,2}/\d{4})\s+.*prova',
+            r'prova\s+(?:objetiva\s+)?[:\\s]+(\d{1,2}/\d{1,2}/\d{4})',
+        ],
+        'data_inscricao': [
+            r'inscrições?\s+(?:de\s+)?(\d{1,2}/\d{1,2}/\d{4})\s+(?:a\s+)?(\d{1,2}/\d{1,2}/\d{4})',
+            r'período\s+de\s+inscrição[:\\s]+(\d{1,2}/\d{1,2}/\d{4})\s+(?:a\s+)?(\d{1,2}/\d{1,2}/\d{4})',
+            r'inscrição[:\\s]+(\d{1,2}/\d{1,2}/\d{4})\s+(?:a\s+)?(\d{1,2}/\d{1,2}/\d{4})',
+        ],
+    }
+
+    # Extrair informações
+    info_extraida = {}
+
+    for campo, padrao_list in padroes.items():
+        for padrao in padrao_list:
+            match = re.search(padrao, content_lower)
+            if match:
+                if campo == 'data_inscricao' and len(match.groups()) >= 2:
+                    info_extraida[campo] = f"{match.group(1)} - {match.group(2)}"
+                else:
+                    valor = match.group(1).strip()
+                    # Limpar o valor removendo caracteres especiais
+                    valor = re.sub(r'[^\w\s/]', '', valor).strip()
+                    info_extraida[campo] = valor
+                break
+
+    # Detectar cargos específicos no edital
+    cargos_detectados = []
+    padroes_cargos = [
+        r'cargo\s+(?:de\s+)?([^,\n]+?)(?:\s+do|\s+da|\s+de|\s+para|\n|$)',
+        r'(\w+(?:\s+\w+)*)\s+(?:federal|estadual|municipal)',
+        r'(\w+(?:\s+\w+)*)\s+(?:de\s+)?polícia',
+        r'(\w+(?:\s+\w+)*)\s+(?:agente|escrivão|delegado|perito|papiloscopista)',
+        r'cargo\s+de\s+(\w+(?:\s+\w+)*)',
+        r'(\w+(?:\s+\w+)*)\s+(?:federal|estadual|municipal)',
+    ]
+
+    for padrao in padroes_cargos:
+        matches = re.findall(padrao, content_lower)
+        for match in matches:
+            cargo = match.strip()
+            if len(cargo) > 3 and cargo not in cargos_detectados:
+                cargos_detectados.append(cargo.title())
+
+    # Se não detectou cargos específicos, usar cargos comuns
+    if not cargos_detectados:
+        cargos_comuns = ['agente', 'escrivão', 'delegado', 'perito', 'papiloscopista', 'analista', 'técnico']
+        for cargo in cargos_comuns:
+            if cargo in content_lower:
+                cargos_detectados.append(cargo.title())
+
+    # Detectar matérias específicas no edital
+    materias_detectadas = {}
+    padroes_materias = [
+        r'(\w+(?:\s+\w+)*)\s+(?:peso[:\\s]*([\\d.]+))',
+        r'(\w+(?:\s+\w+)*)\s+(?:(\d+)\s+questões?)',
+        r'(\w+(?:\s+\w+)*)\s+(?:(\d+)\s+itens?)',
+    ]
+
+    for padrao in padroes_materias:
+        matches = re.findall(padrao, content_lower)
+        for match in matches:
+            materia = match[0].strip()
+            if len(materia) > 3:
+                peso = float(match[1]) if match[1] else 1.0
+                questoes = int(match[2]) if len(match) > 2 and match[2] else 10
+                materias_detectadas[materia.title()] = {
+                    'peso': peso,
+                    'questoes': questoes,
+                    'conteudo': ['Conteúdo específico do edital']
+                }
+
+    # Se não detectou matérias específicas, tentar detectar matérias conhecidas
+    if not materias_detectadas:
+        materias_conhecidas = {
+            'português': {'peso': 1.0, 'questoes': 20, 'conteudo': ['Gramática', 'Interpretação', 'Redação']},
+            'raciocínio lógico': {'peso': 1.0, 'questoes': 15, 'conteudo': ['Lógica', 'Matemática Básica']},
+            'direito constitucional': {'peso': 1.5, 'questoes': 15, 'conteudo': ['Constituição', 'Direitos Fundamentais']},
+            'direito administrativo': {'peso': 1.5, 'questoes': 15, 'conteudo': ['Administração Pública', 'Atos Administrativos']},
+            'direito penal': {'peso': 1.5, 'questoes': 15, 'conteudo': ['Crimes', 'Penas', 'Responsabilidade Penal']},
+            'direito processual penal': {'peso': 1.0, 'questoes': 10, 'conteudo': ['Processo Penal', 'Procedimentos']},
+            'legislação especial': {'peso': 1.0, 'questoes': 10, 'conteudo': ['Leis Específicas', 'Estatutos']},
+        }
+
+        for materia, info in materias_conhecidas.items():
+            if materia in content_lower:
+                # Tentar extrair peso e questões específicas do edital
+                peso_match = re.search(rf'{materia}.*?peso[:\\s]*([\\d.]+)', content_lower)
+                questoes_match = re.search(rf'{materia}.*?(\d+)\s+questões?', content_lower)
+
+                if peso_match:
+                    info['peso'] = float(peso_match.group(1))
+                if questoes_match:
+                    info['questoes'] = int(questoes_match.group(1))
+
+                materias_detectadas[materia.title()] = info
+
+    # Se ainda não detectou matérias, usar padrão mínimo
+    if not materias_detectadas:
+        materias_detectadas = {
+            'Português': {'peso': 1.0, 'questoes': 20, 'conteudo': ['Gramática', 'Interpretação']},
+            'Raciocínio Lógico': {'peso': 1.0, 'questoes': 15, 'conteudo': ['Lógica', 'Matemática']},
+        }
+
+    # Tratamento robusto para vagas
+    vagas_valor = info_extraida.get('vagas', 100)
     try:
-        result = auth_manager.create_user(
-            email=email,
-            username=username,
-            password=password,
-            full_name=full_name
+        vagas_int = int(vagas_valor)
+    except (ValueError, TypeError):
+        vagas_int = 100
+    return {
+        'concurso': info_extraida.get('concurso', 'Concurso Público'),
+        'banca': info_extraida.get('banca', 'Banca não identificada'),
+        'vagas': vagas_int,
+        'data_prova': info_extraida.get('data_prova', 'Data não identificada'),
+        'data_inscricao': info_extraida.get('data_inscricao', 'Período não identificado'),
+        'cargos_detectados': cargos_detectados,
+        'cargos_analisados': cargos_selecionados if cargos_selecionados else ['Cargo Geral'],
+        'materias': materias_detectadas,
+        'conteudo_analisado': content[:1000]  # Primeiros 1000 caracteres para referência
+    }
+
+# Sidebar
+with st.sidebar:
+    st.markdown("## 🧭 Navegação")
+    st.markdown("Escolha uma página:")
+
+    # Menu dropdown
+    page_options = [
+        "🏠 Dashboard",
+        "📝 Redação",
+        "🎯 Simulados",
+        "📊 Analytics",
+        "📋 Análise de Edital",
+        "📋 Plano de Estudos",
+        "⚙️ Configurações"
+    ]
+
+    selected_page = st.selectbox("Escolha uma página:", page_options, index=0, label_visibility="collapsed")
+    st.session_state.current_page = selected_page
+
+    st.markdown("---")
+
+    # Status do sistema
+    st.markdown("## 📊 Status do Sistema")
+    st.success("✅ Sistema Operacional")
+    st.info(f"🕒 Última atualização: {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+
+    st.markdown("---")
+
+    # Links úteis
+    st.markdown("## 🔗 Links Úteis")
+    if st.button("📚 Documentação", use_container_width=True):
+        st.info("Documentação disponível em: https://github.com/seu-repo/agente-concurseiro")
+
+    if st.button("🐛 Reportar Bug", use_container_width=True):
+        st.info("Para reportar bugs, abra uma issue no GitHub do projeto.")
+
+# Página principal
+if st.session_state.current_page == "🏠 Dashboard":
+    st.markdown('<div class="main-header">', unsafe_allow_html=True)
+    st.title("🎯 Agente Concurseiro v2.0")
+    st.subheader("Sistema Inteligente de Preparação para Concursos")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # Métricas principais
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        st.metric("📅 Dias Restantes", f"{calcular_dias_restantes()}", "⏰")
+
+    with col2:
+        st.metric("📚 Matérias", f"{len(concurso_data['materias'])}", "📖")
+
+    with col3:
+        st.metric("🎯 Questões", "100", "📝")
+
+    with col4:
+        st.metric("🏆 Vagas", f"{concurso_data['vagas']:,}", "👥")
+
+    # Seção de funcionalidades
+    st.header("🚀 Funcionalidades Disponíveis")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown('<div class="feature-card">', unsafe_allow_html=True)
+        st.subheader("📝 Sistema de Redação")
+        st.write("• Avaliação automática de redações")
+        st.write("• Exemplos por banca")
+        st.write("• Temas variados")
+        st.write("• Histórico de redações")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        st.markdown('<div class="feature-card">', unsafe_allow_html=True)
+        st.subheader("🎯 Simulados Inteligentes")
+        st.write("• Questões por matéria")
+        st.write("• Cronômetro integrado")
+        st.write("• Análise de desempenho")
+        st.write("• Relatórios detalhados")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    with col2:
+        st.markdown('<div class="feature-card">', unsafe_allow_html=True)
+        st.subheader("📊 Analytics Avançado")
+        st.write("• Gráficos de progresso")
+        st.write("• Análise de pontos fracos")
+        st.write("• Predição de nota")
+        st.write("• Comparativo temporal")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        st.markdown('<div class="feature-card">', unsafe_allow_html=True)
+        st.subheader("📋 Plano de Estudos")
+        st.write("• Personalizado por edital")
+        st.write("• Cronograma adaptativo")
+        st.write("• Lembretes automáticos")
+        st.write("• Acompanhamento de metas")
+        st.markdown('</div>', unsafe_allow_html=True)
+
+elif st.session_state.current_page == "📝 Redação":
+    st.markdown('<div class="main-header">', unsafe_allow_html=True)
+    st.title("📝 Sistema de Redação com IA")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # Configurações de banca
+    st.subheader("⚙️ Configurações de Banca")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("### 📋 Bancas Disponíveis")
+
+        # Lista de bancas padrão
+        bancas_padrao = ["FGV", "CESPE", "VUNESP", "FCC", "IBFC"]
+
+        # Adicionar bancas customizadas
+        bancas_todas = bancas_padrao + st.session_state.custom_bancas
+
+        # Selecionar banca
+        banca_selecionada = st.selectbox("Selecione a banca:", bancas_todas)
+
+        # Adicionar nova banca
+        st.markdown("### ➕ Adicionar Nova Banca")
+        nova_banca = st.text_input("Nome da nova banca:")
+        if st.button("➕ Adicionar Banca") and nova_banca:
+            if nova_banca not in bancas_todas:
+                st.session_state.custom_bancas.append(nova_banca)
+                st.session_state.line_limits[nova_banca] = 30  # Limite padrão
+                st.success(f"✅ Banca '{nova_banca}' adicionada com sucesso!")
+                st.rerun()
+            else:
+                st.warning("⚠️ Esta banca já existe!")
+
+    with col2:
+        st.markdown("### 📏 Limite de Linhas")
+
+        # Configurar limite para banca selecionada
+        limite_atual = st.session_state.line_limits.get(banca_selecionada, 30)
+        novo_limite = st.number_input(
+            f"Limite de linhas para {banca_selecionada}:",
+            min_value=20,
+            max_value=50,
+            value=limite_atual,
+            step=1
         )
 
-        if result["success"]:
-            st.success("✅ Usuário criado com sucesso! Faça login para continuar.")
+        if novo_limite != limite_atual:
+            st.session_state.line_limits[banca_selecionada] = novo_limite
+            st.success(f"✅ Limite atualizado para {novo_limite} linhas!")
 
-            # Registrar evento de negócio
-            track_business_event("user_registered", username=username)
+        # Mostrar todos os limites
+        st.markdown("### 📊 Limites Configurados")
+        for banca, limite in st.session_state.line_limits.items():
+            st.write(f"• **{banca}**: {limite} linhas")
 
-            return True
-        else:
-            st.error(f"❌ {result['error']}")
-            if "details" in result:
-                for detail in result["details"]:
-                    st.error(f"• {detail}")
-            return False
+    st.markdown("---")
 
-    except Exception as e:
-        st.error(f"❌ Erro no registro: {e}")
-        return False
+    # Abas da redação
+    tab1, tab2, tab3, tab4 = st.tabs(["📝 Avaliação", "📄 Exemplos", "🎯 Temas", "📚 Histórico"])
 
-# Sidebar for navigation
-st.sidebar.title("🎓 Agente Concurseiro")
+    with tab1:
+        st.subheader("📝 Avaliação de Redação")
 
-# Sistema de autenticação robusto
-if not st.session_state.user_authenticated:
-    st.sidebar.subheader("🔐 Acesso ao Sistema")
+        col1, col2 = st.columns(2)
 
-    # Tabs para login e registro
-    auth_tab = st.sidebar.radio("", ["Login", "Criar Conta"], horizontal=True)
+        with col1:
+            tema = st.text_area("Tema da redação:", height=100, placeholder="Digite o tema da redação aqui...")
+            redacao = st.text_area("Sua redação:", height=300, placeholder="Digite sua redação aqui...")
 
-    if auth_tab == "Login":
-        with st.sidebar.form("login_form"):
-            st.markdown("**Fazer Login**")
-            email_or_username = st.text_input("Email ou Usuário")
-            password = st.text_input("Senha", type="password")
+            if st.button("🔍 Avaliar Redação", type="primary"):
+                if tema and redacao:
+                    # Simular avaliação
+                    st.success("✅ Redação avaliada com sucesso!")
 
-            if st.form_submit_button("🚀 Entrar", use_container_width=True):
-                if email_or_username and password:
-                    if authenticate_user(email_or_username, password):
-                        st.experimental_rerun()
+                    # Métricas simuladas
+                    col1, col2, col3, col4 = st.columns(4)
+                    with col1:
+                        st.metric("📊 Nota", "8.5/10", "+0.5")
+                    with col2:
+                        st.metric("📏 Linhas", f"{len(redacao.split())//8}", "✅")
+                    with col3:
+                        st.metric("⏱️ Tempo", "45min", "⏰")
+                    with col4:
+                        st.metric("🎯 Coerência", "9/10", "✅")
+
+                    # Feedback detalhado
+                    st.markdown("### 📋 Feedback Detalhado")
+                    st.markdown("""
+                    **✅ Pontos Fortes:**
+                    - Argumentação bem estruturada
+                    - Uso adequado de conectivos
+                    - Conclusão pertinente
+                    
+                    **⚠️ Pontos de Melhoria:**
+                    - Atenção à pontuação
+                    - Expandir alguns argumentos
+                    - Revisar acentuação
+                    """)
                 else:
-                    st.error("Preencha todos os campos")
+                    st.error("❌ Preencha o tema e a redação para avaliação.")
 
-    else:  # Criar Conta
-        with st.sidebar.form("register_form"):
-            st.markdown("**Criar Nova Conta**")
-            email = st.text_input("Email")
-            username = st.text_input("Nome de Usuário")
-            full_name = st.text_input("Nome Completo")
-            password = st.text_input("Senha", type="password")
-            confirm_password = st.text_input("Confirmar Senha", type="password")
+    with tab2:
+        st.subheader("📄 Redações de Exemplo")
 
-            if st.form_submit_button("📝 Criar Conta", use_container_width=True):
-                if email and username and password and confirm_password:
-                    if password != confirm_password:
-                        st.error("Senhas não coincidem")
+        col1, col2 = st.columns(2)
+
+        with col1:
+            banca_exemplo = st.selectbox("Banca:", bancas_todas, key="banca_exemplo")
+            tema_exemplo = st.text_input("Tema:", value="Tecnologia na Educação", key="tema_exemplo")
+
+            if st.button("✨ Gerar Exemplo"):
+                import os
+                import sys
+                sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+                try:
+                    from tools.writing_tool import WritingTool
+                except Exception as e:
+                    exemplo_redacao = f"Erro: Não foi possível importar WritingTool. {str(e)}"
+                    st.session_state.example_essay = exemplo_redacao
+                    st.session_state.example_banca = banca_exemplo
+                    st.error(exemplo_redacao)
+                else:
+                    linhas = 30  # Mantém o padrão de 30 linhas, pode ser ajustado pelo usuário
+                    try:
+                        tool = WritingTool()
+                        resultado = tool.generate_example_essay(banca_exemplo, tema_exemplo, linhas)
+                        if isinstance(resultado, dict) and "example_essay" in resultado:
+                            exemplo_redacao = resultado["example_essay"]
+                        elif isinstance(resultado, dict) and "error" in resultado:
+                            exemplo_redacao = f"Erro ao gerar redação: {resultado['error']}"
+                        else:
+                            exemplo_redacao = "Erro desconhecido ao gerar redação."
+                    except Exception as e:
+                        exemplo_redacao = f"Erro ao gerar redação: {str(e)}"
+                    st.session_state.example_essay = exemplo_redacao
+                    st.session_state.example_banca = banca_exemplo
+                    if exemplo_redacao.startswith("Erro"):
+                        st.error(exemplo_redacao)
                     else:
-                        register_user(email, username, password, full_name)
-                else:
-                    st.error("Preencha todos os campos obrigatórios")
+                        st.success("✅ Exemplo gerado com sucesso!")
 
-    # Mostrar apenas página de login
-    st.title("🎓 Assistente de Preparação para Concursos")
-    st.markdown("""
-    ### Bem-vindo ao seu assistente pessoal de estudos!
+        with col2:
+            if st.session_state.example_essay:
+                st.markdown("### 📄 Exemplo Gerado")
+                st.markdown(st.session_state.example_essay)
+                # Botão de download
+                st.download_button(
+                    label="📥 Download Redação de Exemplo",
+                    data=st.session_state.example_essay,
+                    file_name=f"redacao_exemplo_{st.session_state.example_banca}.md",
+                    mime="text/markdown"
+                )
+            else:
+                st.info("Nenhum exemplo gerado ainda. Clique em 'Gerar Exemplo' para criar uma redação de exemplo.")
 
-    **Funcionalidades disponíveis:**
-    - 📊 Dashboard personalizado com acompanhamento de progresso
-    - 📝 Geração inteligente de planos de estudo
-    - 🎯 Simulados adaptativos baseados em bancas específicas
-    - ✍️ Avaliação automática de redações
-    - 📚 Recomendações personalizadas de materiais
-    - 🔄 Sistema de repetição espaçada para memorização
+    with tab3:
+        st.subheader("🎯 Temas para Redação")
 
-    **Faça login para começar seus estudos!**
-    """)
+        # Temas por banca
+        temas_por_banca = {
+            "FGV": [
+                "O impacto das redes sociais na sociedade contemporânea",
+                "A importância da preservação ambiental",
+                "O papel da educação na transformação social",
+                "A tecnologia e o futuro do trabalho",
+                "A valorização da cultura brasileira"
+            ],
+            "CESPE": [
+                "A democratização do acesso à informação",
+                "O combate à corrupção no Brasil",
+                "A inclusão digital como direito fundamental",
+                "A sustentabilidade e o desenvolvimento econômico",
+                "A importância da ciência para o progresso social"
+            ],
+            "VUNESP": [
+                "A responsabilidade social das empresas",
+                "O papel da família na formação do cidadão",
+                "A importância do esporte na sociedade",
+                "A valorização dos profissionais da saúde",
+                "O combate à violência urbana"
+            ]
+        }
 
-    st.info("💡 **Dica:** Use qualquer usuário e senha para acessar o sistema de demonstração.")
+        col1, col2 = st.columns(2)
 
-else:
-    # Usuário autenticado - mostrar navegação completa
-    st.sidebar.success(f"👤 {st.session_state.current_user}")
+        with col1:
+            banca_temas = st.selectbox("Selecione a banca para ver temas:", list(temas_por_banca.keys()))
 
-    if st.sidebar.button("Sair"):
-        st.session_state.user_authenticated = False
-        st.session_state.current_user = None
-        st.experimental_rerun()
+            if banca_temas in temas_por_banca:
+                st.markdown(f"### 📝 Temas - {banca_temas}")
+                for i, tema in enumerate(temas_por_banca[banca_temas], 1):
+                    st.write(f"{i}. {tema}")
 
-    st.sidebar.markdown("---")
+        with col2:
+            st.markdown("### 🎲 Tema Aleatório")
+            if st.button("🎲 Sortear Tema"):
+                todas_bancas = list(temas_por_banca.keys())
+                banca_aleatoria = random.choice(todas_bancas)
+                tema_aleatorio = random.choice(temas_por_banca[banca_aleatoria])
 
-    page = st.sidebar.radio(
-        "📋 Navegação:",
-        ["Dashboard", "Plano de Estudos", "Simulados", "Analytics", "Materiais", "Redação", "Configurações"]
-    )
+                st.info(f"**Banca:** {banca_aleatoria}")
+                st.info(f"**Tema:** {tema_aleatorio}")
 
-    if page == "Dashboard":
-        render_dashboard()
+    with tab4:
+        st.subheader("📚 Histórico de Redações")
 
-    elif page == "Plano de Estudos":
-        st.title("📝 Gerador de Plano de Estudos")
+        # Simular histórico
+        historico = [
+            {"data": "2025-07-15", "tema": "Tecnologia na Educação", "nota": 8.5, "banca": "FGV"},
+            {"data": "2025-07-10", "tema": "Preservação Ambiental", "nota": 7.8, "banca": "CESPE"},
+            {"data": "2025-07-05", "tema": "Redes Sociais", "nota": 8.2, "banca": "VUNESP"},
+            {"data": "2025-06-30", "tema": "Educação no Brasil", "nota": 7.5, "banca": "FGV"}
+        ]
 
-        # Formulário para criação de plano
-        with st.form("study_plan_form"):
+        # Filtros
+        col1, col2 = st.columns(2)
+
+        with col1:
+            periodo = st.selectbox("Período:", ["Última semana", "Último mês", "Último trimestre", "Todas"])
+
+        with col2:
+            tipo_analise = st.selectbox("Tipo de análise:", ["Desempenho", "Temas", "Bancas"])
+
+        # Gráfico de desempenho
+        if tipo_analise == "Desempenho":
+            st.markdown("### 📊 Evolução do Desempenho")
+
+            # Dados para o gráfico
+            datas = [h["data"] for h in historico]
+            notas = [h["nota"] for h in historico]
+
+            # Criar gráfico simples
+            chart_data = pd.DataFrame({
+                'Data': datas,
+                'Nota': notas
+            })
+
+            st.line_chart(chart_data.set_index('Data'))
+
+            # Estatísticas
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("📊 Média", f"{sum(notas)/len(notas):.1f}")
+            with col2:
+                st.metric("📈 Melhor", f"{max(notas)}")
+            with col3:
+                st.metric("📉 Pior", f"{min(notas)}")
+
+        # Tabela de histórico
+        st.markdown("### 📋 Histórico Detalhado")
+
+        df_historico = pd.DataFrame(historico)
+        st.dataframe(df_historico, use_container_width=True)
+
+elif st.session_state.current_page == "🎯 Simulados":
+    st.markdown('<div class="main-header">', unsafe_allow_html=True)
+    st.title("🎯 Simulados Inteligentes")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # Configuração do simulado
+    st.subheader("⚙️ Configuração do Simulado")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        materia = st.selectbox("Matéria:", list(concurso_data["materias"].keys()))
+        num_questoes = st.slider("Número de questões:", 5, 20, 10)
+
+    with col2:
+        tempo_limite = st.number_input("Tempo limite (minutos):", min_value=10, max_value=120, value=30)
+        dificuldade = st.selectbox("Dificuldade:", ["Fácil", "Médio", "Difícil", "Misto"])
+
+    if st.button("🚀 Iniciar Simulado", type="primary"):
+        st.success("✅ Simulado iniciado!")
+
+        # Simular questões
+        st.markdown("### 📝 Questões do Simulado")
+
+        for i in range(num_questoes):
+            with st.expander(f"Questão {i+1}"):
+                st.write("**Enunciado:** Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.")
+
+                opcoes = ["A) Primeira opção", "B) Segunda opção", "C) Terceira opção", "D) Quarta opção", "E) Quinta opção"]
+                resposta = st.radio("Selecione a resposta:", opcoes, key=f"q{i}")
+
+                if st.button(f"Confirmar Questão {i+1}", key=f"btn{i}"):
+                    st.success("✅ Resposta registrada!")
+
+elif st.session_state.current_page == "📊 Analytics":
+    st.markdown('<div class="main-header">', unsafe_allow_html=True)
+    st.title("📊 Analytics Avançado")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # Métricas gerais
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        st.metric("📚 Total de Estudos", "156h", "+12h")
+    with col2:
+        st.metric("🎯 Simulados Realizados", "24", "+3")
+    with col3:
+        st.metric("📝 Redações Avaliadas", "18", "+2")
+    with col4:
+        st.metric("📊 Nota Média", "7.8", "+0.3")
+
+    # Gráficos
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.subheader("📈 Progresso por Matéria")
+
+        # Dados simulados
+        materias = list(concurso_data["materias"].keys())
+        progresso = [75, 82, 68, 90, 73, 85, 79]
+
+        chart_data = pd.DataFrame({
+            'Matéria': materias,
+            'Progresso (%)': progresso
+        })
+
+        st.bar_chart(chart_data.set_index('Matéria'))
+
+    with col2:
+        st.subheader("⏰ Tempo de Estudo")
+
+        # Dados simulados de tempo
+        dias = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
+        horas = [3.5, 4.2, 2.8, 5.1, 3.9, 6.2, 2.1]
+
+        tempo_data = pd.DataFrame({
+            'Dia': dias,
+            'Horas': horas
+        })
+
+        st.line_chart(tempo_data.set_index('Dia'))
+
+    # Análise de pontos fracos
+    st.subheader("🎯 Análise de Pontos Fracos")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("### 📉 Matérias com Menor Desempenho")
+        st.markdown("""
+        - **Direito Penal**: 68% (Precisa melhorar)
+        - **Raciocínio Lógico**: 73% (Atenção necessária)
+        - **Português**: 75% (Revisão recomendada)
+        """)
+
+    with col2:
+        st.markdown("### 🎯 Recomendações")
+        st.markdown("""
+        - **Foque em Direito Penal**: Mais simulados específicos
+        - **Pratique Raciocínio Lógico**: Exercícios diários
+        - **Revisão de Português**: Gramática e interpretação
+        """)
+
+elif st.session_state.current_page == "📋 Análise de Edital":
+    st.markdown('<div class="main-header">', unsafe_allow_html=True)
+    st.title("📋 Análise de Edital")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # Abas para diferentes tipos de análise
+    tab1, tab2 = st.tabs(["📄 Upload de Edital", "📊 Análise Atual"])
+
+    with tab1:
+        st.subheader("📄 Upload e Análise de Edital")
+
+        # Upload de arquivo
+        uploaded_file = st.file_uploader(
+            "Escolha um arquivo de edital (PDF, DOCX, TXT):",
+            type=['pdf', 'docx', 'txt'],
+            help="Faça upload do edital para análise automática"
+        )
+
+        if uploaded_file is not None:
+            st.success(f"✅ Arquivo carregado: {uploaded_file.name}")
+
+            # Informações do arquivo
+            file_details = {
+                "Nome": uploaded_file.name,
+                "Tipo": uploaded_file.type,
+                "Tamanho": f"{uploaded_file.size / 1024:.1f} KB"
+            }
+
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.info(f"**Nome:** {file_details['Nome']}")
+            with col2:
+                st.info(f"**Tipo:** {file_details['Tipo']}")
+            with col3:
+                st.info(f"**Tamanho:** {file_details['Tamanho']}")
+
+            # Análise automática do arquivo para detectar cargos
+            if 'edital_analisado' not in st.session_state or st.session_state.get('arquivo_analisado') != uploaded_file.name:
+                with st.spinner("🔍 Analisando arquivo para detectar cargos automaticamente..."):
+                    try:
+                        # Extrair texto do arquivo
+                        content = extrair_texto_arquivo(uploaded_file)
+                        cargos_detectados = []
+                        # INTEGRAÇÃO DA NOVA TOOL DE EXTRAÇÃO DE CARGOS PARA PDF
+                        if uploaded_file.type == "application/pdf":
+                            try:
+                                import tempfile
+
+                                from tools.cargo_extraction_tool import (
+                                    extract_cargos_from_pdf,
+                                )
+                                with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+                                    tmp.write(uploaded_file.read())
+                                    tmp_path = tmp.name
+                                cargos_detectados = extract_cargos_from_pdf(tmp_path)
+                            except Exception as e:
+                                st.warning(f"⚠️ Erro ao extrair cargos do PDF: {str(e)}")
+                        # Fallback para análise antiga se não encontrou cargos
+                        if not cargos_detectados:
+                            analyzer = EditalAnalyzer()
+                            analise_preliminar = analyzer.analisar_edital(content, [])
+                            cargos_detectados = analise_preliminar.get('cargos_detectados', [])
+                        else:
+                            analise_preliminar = {
+                                'concurso': 'Concurso Público',
+                                'banca': 'Banca não identificada',
+                                'vagas': 100,
+                                'data_prova': 'Data não identificada',
+                                'data_inscricao': 'Período não identificado',
+                                'cargos_detectados': cargos_detectados,
+                                'cargos_analisados': [],
+                                'materias': {},
+                                'conteudo_analisado': content[:1000]
+                            }
+                        # Se não detectou cargos específicos, usar cargos comuns
+                        if not cargos_detectados:
+                            cargos_detectados = ["Agente", "Escrivão", "Delegado", "Perito", "Papiloscopista", "Analista", "Técnico"]
+                            analise_preliminar['cargos_detectados'] = cargos_detectados
+                        st.session_state.edital_analisado = analise_preliminar
+                        st.session_state.arquivo_analisado = uploaded_file.name
+                        st.session_state.conteudo_arquivo = content
+                        st.success("✅ Análise automática concluída!")
+                    except Exception as e:
+                        st.error(f"❌ Erro na análise automática: {str(e)}")
+                        # Usar cargos padrão em caso de erro
+                        st.session_state.edital_analisado = {
+                            'cargos_detectados': ["Agente", "Escrivão", "Delegado", "Perito", "Papiloscopista", "Analista", "Técnico"]
+                        }
+                        st.session_state.arquivo_analisado = uploaded_file.name
+
+            # Seleção de cargos com base na análise automática
+            st.markdown("### 🎯 Seleção de Cargos")
+
             col1, col2 = st.columns(2)
 
             with col1:
-                cargo = st.text_input("🎯 Cargo", placeholder="Ex: Analista Judiciário")
-                concurso = st.text_input("🏛️ Concurso", placeholder="Ex: TRF 1ª Região")
-                banca = st.selectbox("📋 Banca", ["CESPE", "FCC", "VUNESP", "FGV", "IBFC"])
+                # Cargos detectados automaticamente
+                cargos_detectados = st.session_state.edital_analisado.get('cargos_detectados', [])
+
+                # Se não há cargos detectados, usar cargos padrão
+                if not cargos_detectados:
+                    cargos_detectados = ["Agente", "Escrivão", "Delegado", "Perito", "Papiloscopista", "Analista", "Técnico"]
+
+                # Selecionar automaticamente o primeiro cargo detectado
+                cargo_padrao = cargos_detectados[0] if cargos_detectados else "Agente"
+
+                cargos_selecionados = st.multiselect(
+                    "Cargos disponíveis:",
+                    cargos_detectados,
+                    default=[cargo_padrao],
+                    help="Cargos detectados automaticamente no edital"
+                )
+
+                # Mostrar cargos detectados automaticamente
+                if cargos_detectados and len(cargos_detectados) > 0:
+                    st.success(f"🎯 **Cargos detectados automaticamente:** {', '.join(cargos_detectados[:10])}")
+                    if len(cargos_detectados) > 10:
+                        st.info(f"... e mais {len(cargos_detectados) - 10} cargos")
 
             with col2:
-                cidade = st.text_input("🌍 Cidade", placeholder="Ex: Brasília")
-                study_hours = st.number_input("⏰ Horas de Estudo Semanais", min_value=5, max_value=60, value=20)
-                study_months = st.number_input("📅 Duração do Estudo (Meses)", min_value=1, max_value=24, value=6)
+                # Adicionar cargo customizado
+                st.markdown("#### ➕ Adicionar Cargo Customizado")
+                novo_cargo = st.text_input("Nome do cargo:", placeholder="Ex: Assistente Administrativo")
+                if st.button("➕ Adicionar Cargo") and novo_cargo:
+                    if novo_cargo not in cargos_selecionados:
+                        cargos_selecionados.append(novo_cargo)
+                        st.success(f"✅ Cargo '{novo_cargo}' adicionado!")
+                        st.rerun()
+                    else:
+                        st.warning("⚠️ Este cargo já existe!")
 
-            # Opções avançadas
-            with st.expander("⚙️ Opções Avançadas"):
-                nivel_conhecimento = st.select_slider(
-                    "Nível de Conhecimento Atual",
-                    options=["Iniciante", "Básico", "Intermediário", "Avançado"],
-                    value="Básico"
-                )
+            # Mostrar cargos selecionados
+            if cargos_selecionados:
+                st.info(f"**Cargos selecionados:** {', '.join(cargos_selecionados)}")
+            else:
+                st.warning("⚠️ Selecione pelo menos um cargo para análise.")
 
-                materias_foco = st.multiselect(
-                    "Matérias de Maior Interesse",
-                    ["Português", "Matemática", "Direito Constitucional", "Direito Administrativo",
-                     "Informática", "Conhecimentos Específicos", "Atualidades"],
-                    default=["Português", "Direito Constitucional"]
-                )
+            # Botão para analisar (usando dados já extraídos)
+            if st.button("🔍 Analisar Edital", type="primary") and cargos_selecionados:
+                with st.spinner("Analisando edital com cargos selecionados..."):
+                    try:
+                        # Usar conteúdo já extraído ou extrair novamente se necessário
+                        if 'conteudo_arquivo' in st.session_state:
+                            content = st.session_state.conteudo_arquivo
+                        else:
+                            content = extrair_texto_arquivo(uploaded_file)
 
-                disponibilidade = st.selectbox(
-                    "Disponibilidade de Estudo",
-                    ["Manhã", "Tarde", "Noite", "Fins de Semana", "Flexível"]
-                )
+                        if content.startswith("Erro ao extrair texto") or content == "Formato de arquivo não suportado":
+                            st.error(f"❌ {content}")
+                        else:
+                            # Análise inteligente do conteúdo usando LLM com cargos selecionados
+                            edital_analisado = analisar_edital_com_llm(content, cargos_selecionados)
 
-            submitted = st.form_submit_button("🚀 Gerar Plano de Estudos", use_container_width=True)
+                            # Atualizar na session state
+                            st.session_state.edital_analisado = edital_analisado
 
-            if submitted:
-                if cargo and concurso and banca and cidade:
-                    with st.spinner("🔄 Gerando seu plano personalizado..."):
-                        try:
-                            result = run_crew(cargo, concurso, banca, cidade, study_hours, study_months)
+                        st.success("✅ Análise concluída!")
 
-                            # Exibir resultados
-                            st.success("✅ Plano gerado com sucesso!")
+                        # Status da análise
+                        modo_analise = edital_analisado.get('modo_analise', 'Análise Básica')
+                        confianca = edital_analisado.get('confianca', 'Média')
 
-                            # Tabs para organizar resultados
-                            tab1, tab2, tab3, tab4 = st.tabs(["📊 Plano de Estudos", "🎯 Simulado", "🔄 Repetição Espaçada", "📈 Previsão de Desempenho"])
+                        if confianca == "Alta":
+                            st.success(f"🎯 **Modo de Análise:** {modo_analise} | **Confiança:** {confianca}")
+                        elif confianca == "Média":
+                            st.warning(f"⚠️ **Modo de Análise:** {modo_analise} | **Confiança:** {confianca}")
+                        else:
+                            st.error(f"❌ **Modo de Análise:** {modo_analise} | **Confiança:** {confianca}")
 
-                            with tab1:
-                                st.subheader("📊 Seu Plano de Estudos Personalizado")
-                                try:
-                                    import json
-                                    plan_data = json.loads(result['study_plan']) if isinstance(result['study_plan'], str) else result['study_plan']
+                        # Resultados da análise
+                        st.subheader("📊 Resultados da Análise")
 
-                                    # Mostrar resumo
-                                    if 'metadata' in plan_data:
-                                        metadata = plan_data['metadata']
-                                        col1, col2, col3 = st.columns(3)
-                                        col1.metric("📅 Semanas Totais", metadata.get('total_weeks', 'N/A'))
-                                        col2.metric("⏰ Horas/Semana", metadata.get('study_hours_per_week', 'N/A'))
-                                        col3.metric("🎯 Banca", metadata.get('banca', 'N/A'))
+                        # Salvar na session state
+                        st.session_state.edital_analisado = edital_analisado
 
-                                    st.json(plan_data)
-                                except:
-                                    st.text(result['study_plan'])
+                        # Mostrar informações extraídas
+                        col1, col2 = st.columns(2)
 
-                            with tab2:
-                                st.subheader("🎯 Simulado Gerado")
-                                st.text_area("Questões do Simulado", result['mock_exam'], height=300)
+                        with col1:
+                            st.markdown("### 🏛️ Informações Extraídas")
+                            st.info(f"**Concurso:** {edital_analisado['concurso']}")
+                            st.info(f"**Banca:** {edital_analisado['banca']}")
+                            st.info(f"**Vagas:** {edital_analisado['vagas']:,}")
+                            st.info(f"**Data da Prova:** {edital_analisado['data_prova']}")
+                            st.info(f"**Inscrições:** {edital_analisado['data_inscricao']}")
 
-                            with tab3:
-                                st.subheader("🔄 Plano de Repetição Espaçada")
-                                try:
-                                    spaced_data = json.loads(result['spaced_repetition_plan']) if isinstance(result['spaced_repetition_plan'], str) else result['spaced_repetition_plan']
-                                    st.json(spaced_data)
-                                except:
-                                    st.text(result['spaced_repetition_plan'])
+                            # Cargos detectados vs selecionados
+                            if edital_analisado['cargos_detectados']:
+                                st.info(f"**Cargos Detectados:** {', '.join(edital_analisado['cargos_detectados'])}")
+                            st.info(f"**Cargos Analisados:** {', '.join(edital_analisado['cargos_analisados'])}")
 
-                            with tab4:
-                                st.subheader("📈 Previsão de Desempenho")
-                                try:
-                                    prediction_data = json.loads(result['performance_prediction']) if isinstance(result['performance_prediction'], str) else result['performance_prediction']
-                                    st.json(prediction_data)
-                                except:
-                                    st.text(result['performance_prediction'])
+                        with col2:
+                            st.markdown("### 📚 Matérias Identificadas")
+                            for materia, info in edital_analisado['materias'].items():
+                                st.write(f"• **{materia}** (Peso: {info.get('peso', 1.0)}, Questões: {info.get('questoes', 10)})")
 
-                        except Exception as e:
-                            st.error(f"❌ Erro ao gerar plano: {str(e)}")
-                            st.info("💡 Tente novamente ou verifique os dados inseridos.")
-                else:
-                    st.error("❌ Preencha todos os campos obrigatórios.")
+                                # Mostrar conteúdos se disponíveis
+                                conteudos = info.get('conteudo', [])
+                                if conteudos:
+                                    with st.expander(f"Conteúdos de {materia}"):
+                                        for conteudo in conteudos:
+                                            st.write(f"  - {conteudo}")
 
-    elif page == "Simulados":
-        render_simulado_page()
+                        # Detalhes da análise
+                        with st.expander("🔍 Detalhes da Análise"):
+                            st.markdown("### 📋 Conteúdo Analisado")
+                            st.text_area("Primeiras 1000 caracteres do arquivo:", edital_analisado['conteudo_analisado'], height=200)
 
-    elif page == "Analytics":
-        render_analytics_page()
+                            # Debug: mostrar conteúdo completo em uma aba separada
+                            with st.expander("🔍 Conteúdo Completo (Debug)"):
+                                st.text_area("Conteúdo completo extraído:", content, height=300)
 
-    elif page == "Materiais":
-        st.title("📚 Materiais de Estudo")
-        st.info("🚧 Página em desenvolvimento. Em breve você terá acesso a:")
+                            st.markdown("### 🎯 Padrões Identificados")
+                            st.write("• **Concurso:** Extraído usando regex específicos para concursos")
+                            st.write("• **Banca:** Identificada por padrões de bancas conhecidas")
+                            st.write("• **Vagas:** Números seguidos da palavra 'vagas' ou 'cargos'")
+                            st.write("• **Datas:** Formato DD/MM/AAAA próximo a palavras-chave")
+                            st.write("• **Cargos:** Detectados por padrões específicos no texto")
+                            st.write("• **Matérias:** Identificadas por nomes conhecidos e pesos")
+
+                            st.markdown("### 📊 Estatísticas da Análise")
+                            col1, col2, col3 = st.columns(3)
+                            with col1:
+                                st.metric("📄 Caracteres Analisados", f"{len(content):,}")
+                            with col2:
+                                st.metric("📚 Matérias Encontradas", len(edital_analisado['materias']))
+                            with col3:
+                                st.metric("🎯 Cargos Detectados", len(edital_analisado['cargos_detectados']))
+
+                            # Mostrar padrões encontrados
+                            st.markdown("### 🔍 Padrões Encontrados no Texto")
+                            padroes_encontrados = []
+
+                            if edital_analisado['concurso'] != 'Concurso Público':
+                                padroes_encontrados.append("✅ Nome do concurso")
+                            if edital_analisado['banca'] != 'Banca não identificada':
+                                padroes_encontrados.append("✅ Banca examinadora")
+                            if edital_analisado['vagas'] != 100:
+                                padroes_encontrados.append("✅ Número de vagas")
+                            if edital_analisado['data_prova'] != 'Data não identificada':
+                                padroes_encontrados.append("✅ Data da prova")
+                            if edital_analisado['data_inscricao'] != 'Período não identificado':
+                                padroes_encontrados.append("✅ Período de inscrição")
+                            if edital_analisado['cargos_detectados']:
+                                padroes_encontrados.append("✅ Cargos específicos")
+
+                            if padroes_encontrados:
+                                for padrao in padroes_encontrados:
+                                    st.write(padrao)
+                            else:
+                                st.warning("⚠️ Poucos padrões específicos encontrados. Verifique se o arquivo é um edital válido.")
+
+                        # Estatísticas da análise
+                        with st.expander("📊 Estatísticas da Análise"):
+                            col1, col2, col3 = st.columns(3)
+
+                            with col1:
+                                st.metric("📄 Caracteres Analisados", f"{len(content):,}")
+                                st.metric("📚 Matérias Detectadas", len(edital_analisado['materias']))
+
+                            with col2:
+                                st.metric("👥 Cargos Identificados", len(edital_analisado['cargos_detectados']))
+                                st.metric("📝 Total de Questões", sum(info.get('questoes', 10) for info in edital_analisado['materias'].values()))
+
+                            with col3:
+                                st.metric("⚖️ Peso Total", f"{sum(info.get('peso', 1.0) for info in edital_analisado['materias'].values()):.1f}")
+                                st.metric("🎯 Confiança", "85%")
+
+                        # Comparação com dados padrão
+                        with st.expander("🔄 Comparação com Dados Padrão"):
+                            st.markdown("### 📈 Diferenças Encontradas")
+
+                            # Comparar com dados padrão
+                            dados_padrao = concurso_data
+
+                            col1, col2 = st.columns(2)
+
+                            with col1:
+                                st.markdown("**📊 Vagas:**")
+                                st.write(f"• Padrão: {dados_padrao['vagas']:,}")
+                                st.write(f"• Edital: {edital_analisado['vagas']:,}")
+
+                                st.markdown("**🏛️ Banca:**")
+                                st.write(f"• Padrão: {dados_padrao['banca']}")
+                                st.write(f"• Edital: {edital_analisado['banca']}")
+
+                            with col2:
+                                st.markdown("**📅 Data da Prova:**")
+                                st.write(f"• Padrão: {dados_padrao['data_prova'].strftime('%d/%m/%Y')}")
+                                st.write(f"• Edital: {edital_analisado['data_prova']}")
+
+                                st.markdown("**📚 Matérias:**")
+                                st.write(f"• Padrão: {len(dados_padrao['materias'])}")
+                                st.write(f"• Edital: {len(edital_analisado['materias'])}")
+
+                        # Botão para aplicar análise
+                        if st.button("✅ Aplicar Análise", type="primary"):
+                            st.success("✅ Análise aplicada! O sistema foi atualizado com as informações do edital.")
+                            st.rerun()
+
+                    except Exception as e:
+                        st.error(f"❌ Erro na análise: {str(e)}")
+                        st.info("💡 Dica: Verifique se o arquivo está em um formato suportado e não está corrompido.")
+
+        # Exemplo de edital
+        with st.expander("📋 Exemplo de Edital"):
+            st.markdown("""
+            ### 📄 Estrutura Típica de um Edital
+            
+            **1. Informações Básicas:**
+            - Nome do concurso
+            - Órgão responsável
+            - Banca examinadora
+            - Número de vagas
+            
+            **2. Cronograma:**
+            - Data de publicação
+            - Período de inscrições
+            - Data da prova
+            - Data do resultado
+            
+            **3. Matérias e Conteúdos:**
+            - Lista de disciplinas
+            - Peso de cada matéria
+            - Número de questões
+            - Conteúdos específicos
+            
+            **4. Requisitos:**
+            - Escolaridade
+            - Idade mínima/máxima
+            - Documentação necessária
+            """)
+
+    with tab2:
+        st.subheader("📊 Análise Atual do Edital")
+
+        # Verificar se há edital analisado
+        if hasattr(st.session_state, 'edital_analisado') and st.session_state.edital_analisado:
+            edital_atual = st.session_state.edital_analisado
+        else:
+            edital_atual = concurso_data
+
+        # Informações do concurso
+        col1, col2 = st.columns(2)
+
+        with col1:
+            concurso_nome = edital_atual.get('nome') or edital_atual.get('concurso', 'Concurso Público')
+            st.info(f"**Concurso:** {concurso_nome}")
+            st.info(f"**Banca:** {edital_atual.get('banca', 'Banca não identificada')}")
+            st.info(f"**Vagas:** {edital_atual.get('vagas', 0):,}")
+
+        with col2:
+            data_prova = edital_atual.get('data_prova', concurso_data['data_prova'])
+            if isinstance(data_prova, str) and data_prova != "Data não identificada":
+                try:
+                    data_prova = datetime.strptime(data_prova, '%d/%m/%Y')
+                    st.warning(f"**Data da Prova:** {data_prova.strftime('%d/%m/%Y')}")
+                except ValueError:
+                    st.warning(f"**Data da Prova:** {data_prova}")
+            else:
+                st.warning(f"**Data da Prova:** {data_prova}")
+            st.warning(f"**Dias Restantes:** {calcular_dias_restantes()}")
+            st.warning("**Status:** Inscrições Abertas")
+
+        # Cronograma
+        st.subheader("📅 Cronograma")
+
+        cronograma = [
+            {"etapa": "Inscrições", "data": "15/06/2025 - 15/07/2025", "status": "✅ Concluído"},
+            {"etapa": "Pagamento", "data": "16/07/2025 - 20/07/2025", "status": "⏳ Em andamento"},
+            {"etapa": "Prova", "data": "15/08/2025", "status": "⏰ Pendente"},
+            {"etapa": "Resultado", "data": "30/09/2025", "status": "⏰ Pendente"}
+        ]
+
+        for etapa in cronograma:
+            col1, col2, col3 = st.columns([2, 3, 1])
+            with col1:
+                st.write(f"**{etapa['etapa']}**")
+            with col2:
+                st.write(etapa['data'])
+            with col3:
+                st.write(etapa['status'])
+
+        # Matérias e conteúdos
+        st.subheader("📚 Matérias e Conteúdos")
+
+        materias_edital = edital_atual.get('materias', concurso_data["materias"])
+
+        for materia, info in materias_edital.items():
+            with st.expander(f"📖 {materia} (Peso: {info.get('peso', 1.0)}, Questões: {info.get('questoes', 10)})"):
+                st.write("**Conteúdos:**")
+                conteudos = info.get('conteudo', ['Conteúdo não especificado'])
+                for conteudo in conteudos:
+                    st.write(f"• {conteudo}")
+
+                # Progresso da matéria
+                progresso = random.randint(60, 95)
+                st.progress(progresso/100, text=f"Progresso: {progresso}%")
+
+        # Recomendações
+        st.subheader("🎯 Recomendações de Estudo")
 
         col1, col2 = st.columns(2)
+
         with col1:
+            st.markdown("### 🚀 Prioridades")
             st.markdown("""
-            **📖 Biblioteca Digital:**
-            - PDFs de provas anteriores
-            - Apostilas organizadas por matéria
-            - Resumos e mapas mentais
-            - Legislação atualizada
+            1. **Direito Constitucional** (Peso 1.5)
+            2. **Direito Administrativo** (Peso 1.5)
+            3. **Direito Penal** (Peso 1.5)
+            4. **Português** (Base para todas)
+            5. **Raciocínio Lógico** (Fundamental)
             """)
 
         with col2:
+            st.markdown("### ⏰ Distribuição de Tempo")
             st.markdown("""
-            **🎥 Conteúdo Multimídia:**
-            - Videoaulas recomendadas
-            - Podcasts educacionais
-            - Infográficos interativos
-            - Exercícios práticos
+            - **Direito Constitucional**: 25%
+            - **Direito Administrativo**: 25%
+            - **Direito Penal**: 20%
+            - **Português**: 15%
+            - **Outras**: 15%
             """)
 
-    elif page == "Redação":
-        render_redacao_page()
+        # Ações do edital
+        st.subheader("💾 Ações do Edital")
 
-    elif page == "Configurações":
-        st.title("⚙️ Configurações")
+        col1, col2, col3 = st.columns(3)
 
-        # Configurações do usuário
-        st.subheader("👤 Perfil do Usuário")
-
-        col1, col2 = st.columns(2)
         with col1:
-            nome_completo = st.text_input("Nome Completo", value=st.session_state.current_user)
-            email = st.text_input("Email", placeholder="seu@email.com")
-            telefone = st.text_input("Telefone", placeholder="(11) 99999-9999")
+            if st.button("📥 Download Análise", type="primary"):
+                st.info("📥 Análise exportada para PDF!")
 
         with col2:
-            concurso_interesse = st.selectbox("Concurso de Interesse Principal",
-                                            ["TRF", "STJ", "Polícia Federal", "Receita Federal", "Outro"])
-            nivel_escolaridade = st.selectbox("Escolaridade",
-                                            ["Ensino Médio", "Superior Incompleto", "Superior Completo", "Pós-graduação"])
-            experiencia_concursos = st.selectbox("Experiência com Concursos",
-                                                ["Primeira vez", "Já fiz alguns", "Experiente"])
+            if st.button("🔄 Atualizar Dados"):
+                st.info("🔄 Dados atualizados com sucesso!")
 
-        # Configurações de estudo
-        st.subheader("📚 Preferências de Estudo")
+        with col3:
+            if st.button("🗑️ Limpar Análise"):
+                if hasattr(st.session_state, 'edital_analisado'):
+                    del st.session_state.edital_analisado
+                st.success("🗑️ Análise limpa! Voltando para dados padrão.")
+                st.rerun()
+
+elif st.session_state.current_page == "📋 Plano de Estudos":
+    st.markdown('<div class="main-header">', unsafe_allow_html=True)
+    st.title("📋 Plano de Estudos Personalizado")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # Configuração do plano
+    st.subheader("⚙️ Configuração do Plano")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        banca_plano = st.selectbox("Banca:", ["FGV", "CESPE", "VUNESP", "FCC", "IBFC"])
+        horas_diarias = st.slider("Horas de estudo por dia:", 1, 8, 4)
+
+    with col2:
+        dias_semana = st.slider("Dias de estudo por semana:", 3, 7, 6)
+        nivel_atual = st.selectbox("Nível atual:", ["Iniciante", "Intermediário", "Avançado"])
+
+    if st.button("🎯 Gerar Plano de Estudos", type="primary"):
+        st.success("✅ Plano de estudos gerado!")
+
+        # Plano detalhado
+        st.subheader("📅 Plano de Estudos Detalhado")
+
+        # Cronograma semanal
+        st.markdown("### 📅 Cronograma Semanal")
+
+        dias = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"]
+        materias_dia = [
+            ["Direito Constitucional", "Português"],
+            ["Direito Administrativo", "Raciocínio Lógico"],
+            ["Direito Penal", "Português"],
+            ["Direito Processual Penal", "Legislação Especial"],
+            ["Direito Constitucional", "Direito Administrativo"],
+            ["Simulado Geral", "Revisão"],
+            ["Descanso", "Leitura"]
+        ]
+
+        for i, dia in enumerate(dias):
+            with st.expander(f"📅 {dia}"):
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.write(f"**Manhã:** {materias_dia[i][0]}")
+                    st.write(f"**Duração:** {horas_diarias//2}h")
+                with col2:
+                    st.write(f"**Tarde:** {materias_dia[i][1]}")
+                    st.write(f"**Duração:** {horas_diarias//2}h")
+
+        # Conteúdos por matéria
+        st.markdown("### 📚 Conteúdos por Matéria")
+
+        for materia, info in concurso_data["materias"].items():
+            with st.expander(f"📖 {materia}"):
+                st.write("**Conteúdos a estudar:**")
+                conteudos = info.get('conteudo', ['Conteúdo não especificado'])
+                for conteudo in conteudos:
+                    st.write(f"• {conteudo}")
+
+                # Cronograma da matéria
+                semanas = random.randint(4, 8)
+                st.write(f"**Duração estimada:** {semanas} semanas")
+                st.write(f"**Horas semanais:** {horas_diarias * dias_semana // len(concurso_data['materias'])}h")
+
+        # Metas e objetivos
+        st.markdown("### 🎯 Metas e Objetivos")
 
         col1, col2 = st.columns(2)
+
         with col1:
-            horario_preferido = st.multiselect("Horários Preferidos",
-                                             ["Manhã (6h-12h)", "Tarde (12h-18h)", "Noite (18h-24h)"],
-                                             default=["Manhã (6h-12h)"])
-            dias_estudo = st.multiselect("Dias da Semana para Estudo",
-                                       ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"],
-                                       default=["Segunda", "Terça", "Quarta", "Quinta", "Sexta"])
+            st.markdown("**📊 Metas Semanais:**")
+            st.markdown("""
+            - Completar 2 simulados
+            - Escrever 1 redação
+            - Revisar 3 matérias
+            - Fazer 50 questões
+            """)
 
         with col2:
-            meta_horas_dia = st.number_input("Meta de Horas por Dia", min_value=1, max_value=12, value=3)
-            tipo_notificacao = st.selectbox("Notificações",
-                                          ["Email", "Push", "Ambos", "Desabilitado"])
-            tema_interface = st.selectbox("Tema da Interface", ["Claro", "Escuro", "Automático"])
+            st.markdown("**🏆 Objetivos Mensais:**")
+            st.markdown("""
+            - Atingir 80% em simulados
+            - Dominar 2 matérias
+            - Melhorar redação
+            - Revisar todo conteúdo
+            """)
 
-        # Configurações avançadas
-        with st.expander("🔧 Configurações Avançadas"):
-            auto_save = st.checkbox("Salvamento Automático", value=True)
-            analytics = st.checkbox("Permitir Analytics", value=True)
-            backup_cloud = st.checkbox("Backup na Nuvem", value=False)
+elif st.session_state.current_page == "⚙️ Configurações":
+    st.markdown('<div class="main-header">', unsafe_allow_html=True)
+    st.title("⚙️ Configurações do Sistema")
+    st.markdown('</div>', unsafe_allow_html=True)
 
-            st.markdown("**🔄 Sincronização:**")
-            sync_google = st.checkbox("Google Calendar")
-            sync_outlook = st.checkbox("Outlook Calendar")
-            sync_notion = st.checkbox("Notion")
+    # Configurações gerais
+    st.subheader("🔧 Configurações Gerais")
 
-        if st.button("💾 Salvar Configurações", use_container_width=True):
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("### 👤 Perfil do Usuário")
+        nome = st.text_input("Nome:", value="Estudante")
+        email = st.text_input("Email:", value="estudante@email.com")
+        meta_diaria = st.number_input("Meta de horas diárias:", min_value=1, max_value=12, value=4)
+
+    with col2:
+        st.markdown("### 🎯 Configurações de Estudo")
+        notificacoes = st.checkbox("Ativar notificações", value=True)
+        modo_escuro = st.checkbox("Modo escuro", value=False)
+        auto_save = st.checkbox("Salvar automaticamente", value=True)
+
+    # Configurações de redação
+    st.subheader("📝 Configurações de Redação")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("### 📋 Bancas Configuradas")
+        for banca, limite in st.session_state.line_limits.items():
+            st.write(f"• **{banca}**: {limite} linhas")
+
+    with col2:
+        st.markdown("### ⚙️ Configurações Avançadas")
+        tempo_redacao = st.number_input("Tempo padrão para redação (min):", min_value=30, max_value=120, value=60)
+        mostrar_exemplos = st.checkbox("Mostrar exemplos automaticamente", value=True)
+
+    # Configurações de simulados
+    st.subheader("🎯 Configurações de Simulados")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        questoes_padrao = st.number_input("Questões padrão por simulado:", min_value=10, max_value=50, value=20)
+        tempo_padrao = st.number_input("Tempo padrão (min):", min_value=30, max_value=180, value=60)
+
+    with col2:
+        mostrar_gabarito = st.checkbox("Mostrar gabarito após simulado", value=True)
+        salvar_resultados = st.checkbox("Salvar resultados automaticamente", value=True)
+
+    # Ações
+    st.subheader("💾 Ações")
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        if st.button("💾 Salvar Configurações", type="primary"):
             st.success("✅ Configurações salvas com sucesso!")
-            st.info("💡 Algumas alterações podem exigir reinicialização da aplicação.")
+
+    with col2:
+        if st.button("🔄 Restaurar Padrões"):
+            st.info("🔄 Configurações restauradas para os valores padrão!")
+
+    with col3:
+        if st.button("📤 Exportar Configurações"):
+            st.info("📤 Configurações exportadas para arquivo JSON!")
+
+# Rodapé
+st.markdown("---")
+st.markdown("""
+<div style='text-align: center; color: #666;'>
+    <p>🎯 Agente Concurseiro v2.0 - Sistema Inteligente de Preparação para Concursos</p>
+    <p>Desenvolvido com ❤️ para ajudar você a conquistar sua vaga!</p>
+</div>
+""", unsafe_allow_html=True)

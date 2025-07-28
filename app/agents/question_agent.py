@@ -4,7 +4,9 @@ Responsável por criar o agente que fornece questões personalizadas para o cand
 """
 
 from crewai import Agent
+
 from tools.question_api_tool import QuestionAPITool
+
 
 def create_question_agent():
     """

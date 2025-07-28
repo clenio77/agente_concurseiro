@@ -4,6 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+
 class FlashcardBase(BaseModel):
     """
     Schema base para flashcard.
@@ -41,7 +42,7 @@ class FlashcardReview(FlashcardReviewCreate):
     id: UUID
     flashcard_id: UUID
     created_at: datetime
-    
+
     class Config:
         orm_mode = True
 
@@ -57,6 +58,6 @@ class Flashcard(FlashcardBase):
     created_at: datetime
     updated_at: datetime
     reviews: List[FlashcardReview]
-    
+
     class Config:
         orm_mode = True

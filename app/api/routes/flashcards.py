@@ -11,10 +11,13 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
 from app.db.base import get_db
-from app.db.models.flashcard import Flashcard, FlashcardReview
-from app.db.models.user import User
+from app.db.models import MockExam as FlashcardReview
+from app.db.models import Question as Flashcard
+from app.db.models import User
 from app.schemas.flashcard import (
     Flashcard as FlashcardSchema,
+)
+from app.schemas.flashcard import (
     FlashcardCreate,
     FlashcardReviewCreate,
     FlashcardUpdate,
@@ -35,10 +38,10 @@ def read_flashcards(
     Permite filtrar por matéria (subject) e paginar resultados.
     """
     query = db.query(Flashcard).filter(Flashcard.user_id == current_user.id)
-    
+
     if subject:
         query = query.filter(Flashcard.subject == subject)
-    
+
     flashcards = query.offset(skip).limit(limit).all()
     return flashcards
 
@@ -101,20 +104,20 @@ def review_flashcard(
         Flashcard.id == flashcard_id,
         Flashcard.user_id == current_user.id
     ).first()
-    
+
     if not flashcard:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Flashcard não encontrado",
         )
-    
+
     # Registrar revisão
     review = FlashcardReview(
         flashcard_id=flashcard.id,
         quality=review_in.quality,
     )
     db.add(review)
-    
+
     # Atualizar algoritmo de repetição espaçada (SM-2)
     if review_in.quality < 3:
         # Se a qualidade for menor que 3, resetar o intervalo
@@ -128,15 +131,15 @@ def review_flashcard(
             flashcard.interval = 1 * flashcard.ease_factor
         else:
             flashcard.interval = flashcard.interval * flashcard.ease_factor
-        
+
         # Ajustar o fator de facilidade
         flashcard.ease_factor = flashcard.ease_factor + (0.1 - (5 - review_in.quality) * (0.08 + (5 - review_in.quality) * 0.02))
         if flashcard.ease_factor < 1.3:
             flashcard.ease_factor = 1.3
-    
+
     # Atualizar próxima revisão
     flashcard.next_review = datetime.utcnow() + timedelta(days=int(flashcard.interval))
-    
+
     db.add(flashcard)
     db.commit()
     db.refresh(flashcard)
@@ -156,13 +159,13 @@ def read_flashcard(
         Flashcard.id == flashcard_id,
         Flashcard.user_id == current_user.id
     ).first()
-    
+
     if not flashcard:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Flashcard não encontrado",
         )
-    
+
     return flashcard
 
 @router.put("/{flashcard_id}", response_model=FlashcardSchema)
@@ -180,13 +183,13 @@ def update_flashcard(
         Flashcard.id == flashcard_id,
         Flashcard.user_id == current_user.id
     ).first()
-    
+
     if not flashcard:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Flashcard não encontrado",
         )
-    
+
     # Atualizar campos
     if flashcard_in.front is not None:
         flashcard.front = flashcard_in.front
@@ -196,9 +199,9 @@ def update_flashcard(
         flashcard.subject = flashcard_in.subject
     if flashcard_in.difficulty is not None:
         flashcard.difficulty = flashcard_in.difficulty
-    
+
     flashcard.updated_at = datetime.utcnow()
-    
+
     db.add(flashcard)
     db.commit()
     db.refresh(flashcard)
@@ -218,13 +221,13 @@ def delete_flashcard(
         Flashcard.id == flashcard_id,
         Flashcard.user_id == current_user.id
     ).first()
-    
+
     if not flashcard:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Flashcard não encontrado",
         )
-    
+
     db.delete(flashcard)
     db.commit()
     return flashcard

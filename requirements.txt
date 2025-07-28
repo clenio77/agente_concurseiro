@@ -1,0 +1,39 @@
+# Requisitos Essenciais para Agente Concurseiro
+# Este arquivo contém apenas as dependências diretas de topo.
+# O pip irá resolver as versões das sub-dependências automaticamente.
+
+# --- Frameworks Web e API ---
+fastapi
+uvicorn
+gunicorn
+streamlit
+
+# --- Banco de Dados ---
+sqlalchemy
+psycopg2-binary
+alembic
+
+# --- Cache ---
+redis
+
+# --- Core de IA e Agentes ---
+crewai
+crewai-tools
+# langchain e langchain-core serão instalados como dependências do crewai
+
+# --- Autenticação e Segurança ---
+auth0-python
+bcrypt
+pyjwt
+python-multipart
+python-jose
+
+# --- Outras ferramentas essenciais ---
+python-dotenv
+pandas
+numpy
+beautifulsoup4
+pypdf
+plotly
+matplotlib
+pydantic-settings 

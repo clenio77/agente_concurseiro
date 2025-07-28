@@ -4,6 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+
 # Schemas para registro de desempenho
 class PerformanceRecordBase(BaseModel):
     """
@@ -42,7 +43,7 @@ class PerformanceRecord(PerformanceRecordBase):
     study_plan_id: Optional[UUID] = None
     created_at: datetime
     updated_at: datetime
-    
+
     class Config:
         orm_mode = True
 

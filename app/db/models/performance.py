@@ -5,13 +5,20 @@ Define a estrutura da tabela de registros de desempenho e seus relacionamentos n
 
 import uuid
 from datetime import datetime
-from typing import List
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Float, Integer, String, Text, JSON
+from sqlalchemy import (
+    JSON,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    Text,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from app.db.base import Base
+
 
 class PerformanceRecord(Base):
     """
@@ -19,7 +26,7 @@ class PerformanceRecord(Base):
     Representa um registro diário/semanal de estudo, incluindo tempo, matérias, quizzes e anotações.
     """
     __tablename__ = "performance_records"
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     study_plan_id = Column(UUID(as_uuid=True), ForeignKey("study_plans.id"), nullable=True)
@@ -30,11 +37,11 @@ class PerformanceRecord(Base):
     flashcard_stats = Column(JSON, nullable=True)  # Estatísticas de flashcards em formato JSON
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
-    
+
     # Relacionamentos com usuário e plano de estudo
     user = relationship("User", back_populates="performance_records")
     study_plan = relationship("StudyPlan", back_populates="performance_records")
-    
+
     def __repr__(self):
         """
         Retorna uma representação legível do registro de desempenho.

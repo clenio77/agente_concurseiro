@@ -11,14 +11,15 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
 from app.db.base import get_db
-from app.db.models.quiz import Quiz, QuizQuestion
-from app.db.models.study_plan import StudyPlan
-from app.db.models.user import User
+from app.db.models import MockExam as Quiz
+from app.db.models import Question as QuizQuestion
+from app.db.models import StudyPlan, User
 from app.schemas.quiz import (
     Quiz as QuizSchema,
+)
+from app.schemas.quiz import (
     QuizCreate,
     QuizResult,
-    QuizUpdate,
 )
 
 router = APIRouter()
@@ -66,7 +67,7 @@ def create_quiz(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Plano de estudos não encontrado",
             )
-    
+
     # Criar quiz
     quiz = Quiz(
         user_id=current_user.id,
@@ -80,7 +81,7 @@ def create_quiz(
     db.add(quiz)
     db.commit()
     db.refresh(quiz)
-    
+
     # Criar questões
     for question_in in quiz_in.questions:
         question = QuizQuestion(
@@ -93,7 +94,7 @@ def create_quiz(
             difficulty=question_in.difficulty,
         )
         db.add(question)
-    
+
     db.commit()
     db.refresh(quiz)
     return quiz
@@ -112,13 +113,13 @@ def read_quiz(
         Quiz.id == quiz_id,
         Quiz.user_id == current_user.id
     ).first()
-    
+
     if not quiz:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Quiz não encontrado",
         )
-    
+
     return quiz
 
 @router.post("/{quiz_id}/submit", response_model=QuizSchema)
@@ -137,50 +138,50 @@ def submit_quiz(
         Quiz.id == quiz_id,
         Quiz.user_id == current_user.id
     ).first()
-    
+
     if not quiz:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Quiz não encontrado",
         )
-    
+
     if quiz.is_completed:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Quiz já foi completado",
         )
-    
+
     # Processar respostas
     correct_answers = 0
     total_questions = len(quiz.questions)
-    
+
     for answer in quiz_result.answers:
         question = db.query(QuizQuestion).filter(
             QuizQuestion.id == answer.question_id,
             QuizQuestion.quiz_id == quiz.id
         ).first()
-        
+
         if not question:
             continue
-        
+
         # Atualizar resposta do usuário
         question.user_answer = answer.answer
         question.time_spent_seconds = answer.time_spent_seconds
         question.is_correct = question.correct_answer == answer.answer
-        
+
         if question.is_correct:
             correct_answers += 1
-        
+
         db.add(question)
-    
+
     # Atualizar quiz
     quiz.is_completed = True
     quiz.score = (correct_answers / total_questions) * 100 if total_questions > 0 else 0
     quiz.completed_at = datetime.utcnow()
-    
+
     if not quiz.started_at:
         quiz.started_at = datetime.utcnow()
-    
+
     db.add(quiz)
     db.commit()
     db.refresh(quiz)
@@ -200,13 +201,13 @@ def delete_quiz(
         Quiz.id == quiz_id,
         Quiz.user_id == current_user.id
     ).first()
-    
+
     if not quiz:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Quiz não encontrado",
         )
-    
+
     db.delete(quiz)
     db.commit()
     return quiz

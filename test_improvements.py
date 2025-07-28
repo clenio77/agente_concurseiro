@@ -1,11 +1,50 @@
-#!/usr/bin/env python3
 """
-Script de teste para verificar as melhorias implementadas
+Testes de melhorias e funcionalidades avançadas
 """
 
-import json
-import sys
 import os
+import sys
+from pathlib import Path
+
+# Configurar ambiente de teste
+project_root = Path(__file__).parent
+sys.path.insert(0, str(project_root))
+
+# Configurar variáveis de ambiente para testes
+os.environ["ENVIRONMENT"] = "testing"
+os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+os.environ["DATABASE_URI"] = "sqlite:///:memory:"
+os.environ["SECRET_KEY"] = "test-secret-key"
+os.environ["LOG_LEVEL"] = "DEBUG"
+os.environ["SQL_DEBUG"] = "false"
+
+# Criar diretórios necessários
+os.makedirs("data", exist_ok=True)
+os.makedirs("logs", exist_ok=True)
+os.makedirs("backups", exist_ok=True)
+
+import json
+import os
+import sys
+from pathlib import Path
+
+# Configurar ambiente de teste
+project_root = Path(__file__).parent
+sys.path.insert(0, str(project_root))
+
+# Configurar variáveis de ambiente para testes
+os.environ["ENVIRONMENT"] = "testing"
+os.environ["DATABASE_URL"] = "sqlite:///:memory:"
+os.environ["DATABASE_URI"] = "sqlite:///:memory:"
+os.environ["SECRET_KEY"] = "test-secret-key"
+os.environ["LOG_LEVEL"] = "DEBUG"
+os.environ["SQL_DEBUG"] = "false"
+
+# Criar diretórios necessários
+os.makedirs("data", exist_ok=True)
+os.makedirs("logs", exist_ok=True)
+os.makedirs("backups", exist_ok=True)
+
 
 # Adicionar o diretório raiz ao path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -13,12 +52,12 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 def test_mock_exam_tool():
     """Testa o MockExamTool melhorado"""
     print("🎯 Testando MockExamTool...")
-    
+
     try:
         from tools.mock_exam_tool import MockExamTool
-        
+
         tool = MockExamTool()
-        
+
         # Teste 1: Gerar simulado
         params = {
             "banca": "CESPE",
@@ -27,32 +66,35 @@ def test_mock_exam_tool():
             "difficulty": "medium",
             "cargo": "Analista Judiciário"
         }
-        
+
         result = tool._run("generate_exam", json.dumps(params))
         exam_data = json.loads(result)
-        
+
         print(f"✅ Simulado gerado com {exam_data['total_questions']} questões")
         print(f"   Banca: {exam_data['banca']}")
         print(f"   Tempo estimado: {exam_data['estimated_time']} minutos")
-        
+
         # Teste 2: Avaliar simulado
         answers = {}
         for i, question in enumerate(exam_data['questions'][:3]):
             answers[question['id']] = 'A'  # Simular respostas
-        
+
         eval_params = {
             "exam_id": exam_data['id'],
             "answers": answers
         }
-        
+
         eval_result = tool._run("evaluate_exam", json.dumps(eval_params))
         eval_data = json.loads(eval_result)
-        
+
         print(f"✅ Avaliação concluída - Pontuação: {eval_data['score']}%")
-        print(f"   Acertos: {eval_data['correct_count']}/{eval_data['total_questions']}")
-        
+        print(
+            f"   Acertos: {eval_data['correct_count']}/"
+            f"{eval_data['total_questions']}"
+        )
+
         return True
-        
+
     except Exception as e:
         print(f"❌ Erro no MockExamTool: {e}")
         return False
@@ -60,12 +102,12 @@ def test_mock_exam_tool():
 def test_web_search_tool():
     """Testa o WebSearchTool melhorado"""
     print("\n🔍 Testando WebSearchTool...")
-    
+
     try:
         from tools.web_search_tool import WebSearchTool
-        
+
         tool = WebSearchTool()
-        
+
         # Teste de busca
         params = {
             "cargo": "Analista Judiciário",
@@ -74,16 +116,16 @@ def test_web_search_tool():
             "cidade": "Brasília",
             "max_results": 5
         }
-        
+
         result = tool._run("search_exams", json.dumps(params))
         search_data = json.loads(result)
-        
+
         print(f"✅ Busca realizada - {search_data['total_results']} resultados")
         print(f"   Extrações bem-sucedidas: {search_data['successful_extractions']}")
         print(f"   Recomendações: {len(search_data['recommendations'])}")
-        
+
         return True
-        
+
     except Exception as e:
         print(f"❌ Erro no WebSearchTool: {e}")
         return False
@@ -91,12 +133,12 @@ def test_web_search_tool():
 def test_question_api_tool():
     """Testa o QuestionAPITool melhorado"""
     print("\n❓ Testando QuestionAPITool...")
-    
+
     try:
         from tools.question_api_tool import QuestionAPITool
-        
+
         tool = QuestionAPITool()
-        
+
         # Teste 1: Buscar questões
         params = {
             "subjects": ["Português", "Matemática"],
@@ -104,16 +146,16 @@ def test_question_api_tool():
             "count": 5,
             "banca": "CESPE"
         }
-        
+
         result = tool._run("fetch_questions", json.dumps(params))
         questions = json.loads(result)
-        
+
         print(f"✅ {len(questions)} questões obtidas")
-        
+
         if questions:
             first_question = questions[0]
             print(f"   Primeira questão: {first_question['subject']} - {first_question['difficulty']}")
-        
+
         # Teste 2: Quiz diário
         study_plan = {
             "subject_distribution": {
@@ -121,20 +163,20 @@ def test_question_api_tool():
                 "Matemática": {"hours_per_week": 6}
             }
         }
-        
+
         quiz_params = {
             "study_plan": study_plan,
             "performance_history": []
         }
-        
+
         quiz_result = tool._run("daily_quiz", json.dumps(quiz_params))
         quiz_data = json.loads(quiz_result)
-        
+
         print(f"✅ Quiz diário gerado com {len(quiz_data['questions'])} questões")
         print(f"   Matérias de foco: {', '.join(quiz_data['focus_subjects'])}")
-        
+
         return True
-        
+
     except Exception as e:
         print(f"❌ Erro no QuestionAPITool: {e}")
         return False
@@ -142,22 +184,22 @@ def test_question_api_tool():
 def test_question_bank():
     """Testa o banco de questões"""
     print("\n📚 Testando banco de questões...")
-    
+
     try:
         with open('data/questions/question_bank.json', 'r', encoding='utf-8') as f:
             bank = json.load(f)
-        
+
         total_questions = 0
         for subject, questions in bank['questions'].items():
             total_questions += len(questions)
             print(f"   {subject}: {len(questions)} questões")
-        
+
         print(f"✅ Banco carregado com {total_questions} questões totais")
         print(f"   Matérias: {len(bank['questions'])}")
         print(f"   Bancas suportadas: {', '.join(bank['metadata']['bancas'])}")
-        
+
         return True
-        
+
     except Exception as e:
         print(f"❌ Erro no banco de questões: {e}")
         return False
@@ -165,20 +207,20 @@ def test_question_bank():
 def test_dashboard_data():
     """Testa os dados do dashboard"""
     print("\n📊 Testando dados do dashboard...")
-    
+
     try:
         with open('data/dashboard/dashboard_data.json', 'r', encoding='utf-8') as f:
             dashboard = json.load(f)
-        
-        print(f"✅ Dashboard carregado")
+
+        print("✅ Dashboard carregado")
         print(f"   Progresso geral: {dashboard['progress_summary']['completion_percentage']}%")
         print(f"   Matérias: {len(dashboard['subject_progress'])}")
         print(f"   Atividades próximas: {len(dashboard['upcoming_activities'])}")
         print(f"   Conquistas: {len(dashboard.get('achievements', []))}")
         print(f"   Recomendações: {len(dashboard.get('recommendations', []))}")
-        
+
         return True
-        
+
     except Exception as e:
         print(f"❌ Erro nos dados do dashboard: {e}")
         return False
@@ -186,20 +228,20 @@ def test_dashboard_data():
 def test_config():
     """Testa o sistema de configuração"""
     print("\n⚙️ Testando configuração...")
-    
+
     try:
-        from app.utils.config import load_config, save_config
-        
+        from app.utils.config import load_config
+
         config = load_config()
-        
-        print(f"✅ Configuração carregada")
+
+        print("✅ Configuração carregada")
         print(f"   App: {config['app']['name']} v{config['app']['version']}")
         print(f"   Features ativas: {sum(1 for f in config['features'].values() if f)}")
         print(f"   Bancas suportadas: {len(config['study']['supported_bancas'])}")
         print(f"   Matérias suportadas: {len(config['study']['supported_subjects'])}")
-        
+
         return True
-        
+
     except Exception as e:
         print(f"❌ Erro na configuração: {e}")
         return False
@@ -283,7 +325,11 @@ def test_notifications_system():
     print("\n🔔 Testando sistema de notificações...")
 
     try:
-        from app.utils.notifications import NotificationManager, NotificationType, NotificationPriority
+        from app.utils.notifications import (
+            NotificationManager,
+            NotificationPriority,
+            NotificationType,
+        )
 
         # Criar gerenciador de notificações
         manager = NotificationManager("test_user")
@@ -375,18 +421,18 @@ def main():
         test_notifications_system,
         test_writing_system
     ]
-    
+
     passed = 0
     total = len(tests)
-    
+
     for test in tests:
         if test():
             passed += 1
-    
-    print(f"\n📋 Resumo dos testes:")
+
+    print("\n📋 Resumo dos testes:")
     print(f"   ✅ Passou: {passed}/{total}")
     print(f"   ❌ Falhou: {total - passed}/{total}")
-    
+
     if passed == total:
         print("\n🎉 Todos os testes passaram! Sistema funcionando corretamente.")
         return 0

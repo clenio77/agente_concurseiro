@@ -2,7 +2,8 @@ import json
 import random
 import uuid
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Dict, List
+
 
 class MockExamTool:
     def __init__(self):
@@ -141,6 +142,11 @@ class MockExamTool:
         }
 
         return mock_exam
+
+    def generate_exam(self, banca: str, subjects: List[str], num_questions: int = 20,
+                     difficulty: str = 'mixed', cargo: str = None) -> Dict:
+        """Alias para generate_mock_exam para compatibilidade"""
+        return self.generate_mock_exam(banca, subjects, num_questions, difficulty, cargo)
 
     def _distribute_questions_by_subject(self, subjects: List[str], total_questions: int,
                                        subject_weights: Dict[str, float]) -> Dict[str, int]:

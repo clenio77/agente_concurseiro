@@ -4,7 +4,9 @@ Responsável por criar o agente que gera simulados baseados em provas anteriores
 """
 
 from crewai import Agent
+
 from tools.mock_exam_tool import MockExamTool
+
 
 def create_mock_exam_agent():
     """

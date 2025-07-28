@@ -14,7 +14,7 @@ from app.api.deps import get_current_user
 from app.core.config import settings
 from app.core.security import create_access_token, verify_password
 from app.db.base import get_db
-from app.db.models.user import User
+from app.db.models import User
 from app.schemas.token import Token
 from app.schemas.user import User as UserSchema
 
@@ -32,7 +32,7 @@ def login_access_token(
     """
     # Buscar usuário pelo nome de usuário
     user = db.query(User).filter(User.username == form_data.username).first()
-    
+
     # Verificar se o usuário existe e a senha está correta
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
@@ -40,14 +40,14 @@ def login_access_token(
             detail="Nome de usuário ou senha incorretos",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     # Verificar se o usuário está ativo
     if not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Usuário inativo"
         )
-    
+
     # Criar token de acesso
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     return {

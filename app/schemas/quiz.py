@@ -2,7 +2,8 @@ from datetime import datetime
 from typing import List, Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
+
 
 class QuestionBase(BaseModel):
     """
@@ -31,7 +32,7 @@ class Question(QuestionBase):
     is_correct: Optional[bool] = None
     time_spent_seconds: Optional[int] = None
     created_at: datetime
-    
+
     class Config:
         orm_mode = True
 
@@ -88,6 +89,6 @@ class Quiz(QuizBase):
     created_at: datetime
     updated_at: datetime
     questions: List[Question]
-    
+
     class Config:
         orm_mode = True

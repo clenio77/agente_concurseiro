@@ -2,13 +2,14 @@
 Configuração e gerenciamento do banco de dados
 """
 
-import os
-from sqlalchemy import create_engine, event
-from sqlalchemy.orm import sessionmaker, Session
-from sqlalchemy.pool import StaticPool
-from contextlib import contextmanager
 import logging
+import os
+from contextlib import contextmanager
 from typing import Generator
+
+from sqlalchemy import create_engine, event, text
+from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from .models import Base
 
@@ -18,22 +19,22 @@ logger = logging.getLogger(__name__)
 
 class DatabaseManager:
     """Gerenciador de banco de dados"""
-    
+
     def __init__(self):
         self.database_url = self._get_database_url()
         self.engine = self._create_engine()
         self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
-        
+
     def _get_database_url(self) -> str:
         """Obtém URL do banco de dados baseada no ambiente"""
-        
+
         # Verificar variável de ambiente primeiro
         if database_url := os.getenv("DATABASE_URL"):
             return database_url
-        
+
         # Configuração baseada no ambiente
         environment = os.getenv("ENVIRONMENT", "development")
-        
+
         if environment == "production":
             # PostgreSQL para produção
             host = os.getenv("DB_HOST", "localhost")
@@ -41,22 +42,22 @@ class DatabaseManager:
             database = os.getenv("DB_NAME", "agente_concurseiro")
             username = os.getenv("DB_USER", "postgres")
             password = os.getenv("DB_PASSWORD", "")
-            
+
             return f"postgresql://{username}:{password}@{host}:{port}/{database}"
-            
+
         elif environment == "testing":
             # SQLite em memória para testes
             return "sqlite:///:memory:"
-            
+
         else:
             # SQLite para desenvolvimento
             db_path = os.getenv("DB_PATH", "data/agente_concurseiro.db")
             os.makedirs(os.path.dirname(db_path), exist_ok=True)
             return f"sqlite:///{db_path}"
-    
+
     def _create_engine(self):
         """Cria engine do SQLAlchemy"""
-        
+
         if self.database_url.startswith("sqlite"):
             # Configurações específicas para SQLite
             engine = create_engine(
@@ -68,7 +69,7 @@ class DatabaseManager:
                 },
                 echo=os.getenv("SQL_DEBUG", "false").lower() == "true"
             )
-            
+
             # Habilitar foreign keys no SQLite
             @event.listens_for(engine, "connect")
             def set_sqlite_pragma(dbapi_connection, connection_record):
@@ -79,7 +80,7 @@ class DatabaseManager:
                 cursor.execute("PRAGMA cache_size=1000")
                 cursor.execute("PRAGMA temp_store=MEMORY")
                 cursor.close()
-                
+
         else:
             # Configurações para PostgreSQL
             engine = create_engine(
@@ -90,9 +91,9 @@ class DatabaseManager:
                 pool_recycle=3600,
                 echo=os.getenv("SQL_DEBUG", "false").lower() == "true"
             )
-        
+
         return engine
-    
+
     def create_tables(self):
         """Cria todas as tabelas"""
         try:
@@ -101,7 +102,7 @@ class DatabaseManager:
         except Exception as e:
             logger.error(f"❌ Erro ao criar tabelas: {e}")
             raise
-    
+
     def drop_tables(self):
         """Remove todas as tabelas (cuidado!)"""
         try:
@@ -110,7 +111,7 @@ class DatabaseManager:
         except Exception as e:
             logger.error(f"❌ Erro ao remover tabelas: {e}")
             raise
-    
+
     @contextmanager
     def get_session(self) -> Generator[Session, None, None]:
         """Context manager para sessões do banco"""
@@ -124,27 +125,27 @@ class DatabaseManager:
             raise
         finally:
             session.close()
-    
+
     def get_session_sync(self) -> Session:
         """Obtém sessão síncrona (para uso em Streamlit)"""
         return self.SessionLocal()
-    
+
     def health_check(self) -> bool:
-        """Verifica saúde do banco de dados"""
+        """Verifica a conexão com o banco de dados."""
         try:
             with self.get_session() as session:
-                session.execute("SELECT 1")
+                session.execute(text("SELECT 1"))
             return True
         except Exception as e:
-            logger.error(f"❌ Health check falhou: {e}")
+            logger.error(f"❌ Erro na sessão do banco: {e}")
             return False
-    
+
     def get_stats(self) -> dict:
         """Obtém estatísticas do banco"""
         try:
             with self.get_session() as session:
-                from .models import User, MockExam, Essay, Question
-                
+                from .models import Essay, MockExam, Question, User
+
                 stats = {
                     "users_count": session.query(User).count(),
                     "mock_exams_count": session.query(MockExam).count(),
@@ -153,7 +154,7 @@ class DatabaseManager:
                     "database_url": self.database_url.split("@")[-1] if "@" in self.database_url else self.database_url,
                     "engine_info": str(self.engine.url)
                 }
-                
+
                 return stats
         except Exception as e:
             logger.error(f"❌ Erro ao obter estatísticas: {e}")
@@ -174,18 +175,18 @@ def get_db_session():
 def init_database():
     """Inicializa o banco de dados"""
     logger.info("🚀 Inicializando banco de dados...")
-    
+
     # Criar tabelas
     db_manager.create_tables()
-    
+
     # Verificar saúde
     if db_manager.health_check():
         logger.info("✅ Banco de dados inicializado com sucesso")
-        
+
         # Exibir estatísticas
         stats = db_manager.get_stats()
         logger.info(f"📊 Estatísticas: {stats}")
-        
+
         return True
     else:
         logger.error("❌ Falha na inicialização do banco")
@@ -194,11 +195,11 @@ def init_database():
 def seed_database():
     """Popula banco com dados iniciais"""
     logger.info("🌱 Populando banco com dados iniciais...")
-    
+
     try:
         with db_manager.get_session() as session:
-            from .models import SystemConfig, Question
-            
+            from .models import Question, SystemConfig
+
             # Configurações do sistema
             configs = [
                 {
@@ -225,19 +226,19 @@ def seed_database():
                     "category": "content"
                 }
             ]
-            
+
             for config_data in configs:
                 existing = session.query(SystemConfig).filter_by(key=config_data["key"]).first()
                 if not existing:
                     config = SystemConfig(**config_data)
                     session.add(config)
-            
+
             # Migrar questões do JSON para o banco
             import json
             try:
                 with open("data/questions/question_bank.json", "r", encoding="utf-8") as f:
                     question_data = json.load(f)
-                
+
                 questions_added = 0
                 for subject, questions in question_data.get("questions", {}).items():
                     for q in questions:
@@ -258,15 +259,15 @@ def seed_database():
                             )
                             session.add(question)
                             questions_added += 1
-                
+
                 logger.info(f"✅ {questions_added} questões migradas para o banco")
-                
+
             except FileNotFoundError:
                 logger.warning("⚠️ Arquivo de questões não encontrado")
-            
+
             session.commit()
             logger.info("✅ Dados iniciais inseridos com sucesso")
-            
+
     except Exception as e:
         logger.error(f"❌ Erro ao popular banco: {e}")
         raise
@@ -274,29 +275,29 @@ def seed_database():
 def backup_database():
     """Cria backup do banco de dados"""
     logger.info("💾 Criando backup do banco...")
-    
+
     try:
         import shutil
         from datetime import datetime
-        
+
         if db_manager.database_url.startswith("sqlite"):
             # Backup SQLite
             db_path = db_manager.database_url.replace("sqlite:///", "")
             backup_dir = "backups"
             os.makedirs(backup_dir, exist_ok=True)
-            
+
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             backup_path = f"{backup_dir}/backup_{timestamp}.db"
-            
+
             shutil.copy2(db_path, backup_path)
             logger.info(f"✅ Backup criado: {backup_path}")
-            
+
             return backup_path
         else:
             # Para PostgreSQL, seria necessário usar pg_dump
             logger.warning("⚠️ Backup automático não implementado para PostgreSQL")
             return None
-            
+
     except Exception as e:
         logger.error(f"❌ Erro ao criar backup: {e}")
         return None
@@ -304,19 +305,19 @@ def backup_database():
 if __name__ == "__main__":
     # Script para inicializar banco
     print("🚀 Inicializando banco de dados...")
-    
+
     if init_database():
         print("✅ Banco inicializado com sucesso!")
-        
+
         # Popular com dados iniciais
         seed_database()
         print("✅ Dados iniciais inseridos!")
-        
+
         # Criar backup
         backup_path = backup_database()
         if backup_path:
             print(f"✅ Backup criado: {backup_path}")
-        
+
         print("🎉 Sistema pronto para uso!")
     else:
         print("❌ Falha na inicialização!")

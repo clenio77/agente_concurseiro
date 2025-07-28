@@ -4,7 +4,9 @@ Responsável por criar o agente que otimiza a memorização do candidato.
 """
 
 from crewai import Agent
+
 from tools.spaced_repetition_tool import SpacedRepetitionTool
+
 
 def create_spaced_repetition_agent():
     """

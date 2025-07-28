@@ -9,9 +9,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_admin_user, get_current_user
-from app.core.security import get_password_hash, verify_password
+from app.core.security import get_password_hash
 from app.db.base import get_db
-from app.db.models.user import User
+from app.db.models import User
 from app.schemas.user import User as UserSchema
 from app.schemas.user import UserCreate, UserUpdate
 
@@ -49,7 +49,7 @@ def create_user(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="E-mail já registrado",
         )
-    
+
     # Verificar se o nome de usuário já existe
     user = db.query(User).filter(User.username == user_in.username).first()
     if user:
@@ -57,7 +57,7 @@ def create_user(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Nome de usuário já registrado",
         )
-    
+
     # Criar usuário
     user = User(
         email=user_in.email,
@@ -100,7 +100,7 @@ def update_user_me(
                 detail="E-mail já registrado",
             )
         current_user.email = user_in.email
-    
+
     if user_in.username is not None:
         # Verificar se o nome de usuário já existe
         user = db.query(User).filter(User.username == user_in.username).first()
@@ -110,13 +110,13 @@ def update_user_me(
                 detail="Nome de usuário já registrado",
             )
         current_user.username = user_in.username
-    
+
     if user_in.full_name is not None:
         current_user.full_name = user_in.full_name
-    
+
     if user_in.password is not None:
         current_user.hashed_password = get_password_hash(user_in.password)
-    
+
     db.add(current_user)
     db.commit()
     db.refresh(current_user)
@@ -138,14 +138,14 @@ def read_user_by_id(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Usuário não encontrado",
         )
-    
+
     # Apenas administradores podem ver outros usuários
     if user.id != current_user.id and not current_user.is_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Permissão insuficiente",
         )
-    
+
     return user
 
 

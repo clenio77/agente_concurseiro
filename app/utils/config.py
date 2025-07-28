@@ -5,7 +5,8 @@ Fornece funções para carregar, salvar e acessar configurações e chaves de AP
 
 import json
 import os
-from typing import Dict, Any
+from typing import Any, Dict
+
 
 def load_config() -> Dict[str, Any]:
     """
@@ -14,7 +15,7 @@ def load_config() -> Dict[str, Any]:
     :return: Dicionário com as configurações carregadas.
     """
     config_path = "config/app_config.json"
-    
+
     # Verificar se o arquivo existe
     if not os.path.exists(config_path):
         # Criar configuração padrão
@@ -72,9 +73,14 @@ def load_config() -> Dict[str, Any]:
             "study": {
                 "supported_bancas": ["CESPE", "FCC", "VUNESP", "FGV", "IBFC"],
                 "supported_subjects": [
-                    "Português", "Matemática", "Direito Constitucional",
-                    "Direito Administrativo", "Informática", "Conhecimentos Específicos",
-                    "Atualidades", "Raciocínio Lógico"
+                    "Português",
+                    "Matemática",
+                    "Direito Constitucional",
+                    "Direito Administrativo",
+                    "Informática",
+                    "Conhecimentos Específicos",
+                    "Atualidades",
+                    "Raciocínio Lógico"
                 ],
                 "difficulty_levels": ["easy", "medium", "hard", "mixed"]
             },
@@ -86,16 +92,16 @@ def load_config() -> Dict[str, Any]:
                 "daily_quiz": True
             }
         }
-        
+
         # Criar diretório se não existir
         os.makedirs(os.path.dirname(config_path), exist_ok=True)
-        
+
         # Salvar configuração padrão
         with open(config_path, "w") as f:
             json.dump(default_config, f, indent=2)
-        
+
         return default_config
-    
+
     # Carregar configuração existente
     try:
         with open(config_path, "r") as f:
@@ -112,15 +118,15 @@ def save_config(config: Dict[str, Any]) -> bool:
     :return: True se salvar com sucesso, False caso contrário.
     """
     config_path = "config/app_config.json"
-    
+
     try:
         # Criar diretório se não existir
         os.makedirs(os.path.dirname(config_path), exist_ok=True)
-        
+
         # Salvar configuração
         with open(config_path, "w") as f:
             json.dump(config, f, indent=2)
-        
+
         return True
     except Exception as e:
         print(f"Erro ao salvar configuração: {str(e)}")
@@ -134,14 +140,14 @@ def get_api_key(service: str) -> str:
     :return: Chave de API como string, ou string vazia se não encontrada.
     """
     config = load_config()
-    
+
     # Verificar se a chave existe na configuração
     if "api_keys" in config and service in config["api_keys"]:
         return config["api_keys"][service]
-    
+
     # Verificar se a chave existe como variável de ambiente
     env_key = f"{service.upper()}_API_KEY"
     if env_key in os.environ:
         return os.environ[env_key]
-    
+
     return ""

@@ -4,7 +4,9 @@ Responsável por criar o agente que busca provas anteriores na web.
 """
 
 from crewai import Agent
+
 from tools.web_search_tool import WebSearchTool
+
 
 def create_search_agent():
     """

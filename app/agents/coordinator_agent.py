@@ -4,7 +4,9 @@ Responsável por criar o agente que coordena os diferentes aspectos da preparaç
 """
 
 from crewai import Agent
+
 from tools.coordination_tool import CoordinationTool
+
 
 def create_coordinator_agent():
     """

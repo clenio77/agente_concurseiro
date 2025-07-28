@@ -6,11 +6,21 @@ Define a estrutura da tabela de planos de estudo e seus relacionamentos no banco
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, JSON, String, Text
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Column,
+    DateTime,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from app.db.base import Base
+
 
 class StudyPlan(Base):
     """
@@ -18,7 +28,7 @@ class StudyPlan(Base):
     Representa um plano de estudos personalizado para o usuário, incluindo cronograma, conteúdo e vínculo com concursos.
     """
     __tablename__ = "study_plans"
-    
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     title = Column(String, nullable=False)
@@ -35,7 +45,7 @@ class StudyPlan(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    
+
     # Relacionamentos com outras tabelas
     user = relationship("User", back_populates="study_plans")
     quizzes = relationship("Quiz", back_populates="study_plan", cascade="all, delete-orphan")

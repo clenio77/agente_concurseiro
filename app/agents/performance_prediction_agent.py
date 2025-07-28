@@ -4,7 +4,9 @@ Responsável por criar o agente que prevê o desempenho do candidato.
 """
 
 from crewai import Agent
+
 from tools.performance_prediction_tool import PerformancePredictionTool
+
 
 def create_performance_prediction_agent():
     """

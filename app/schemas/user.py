@@ -4,6 +4,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, EmailStr
 
+
 class UserBase(BaseModel):
     """
     Schema base para usuário.
@@ -35,6 +36,6 @@ class User(UserBase):
     id: UUID
     created_at: datetime
     updated_at: datetime
-    
+
     class Config:
         orm_mode = True

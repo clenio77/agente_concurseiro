@@ -1,10 +1,11 @@
 import logging
+
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.security import get_password_hash
 from app.db.base import SessionLocal
-from app.db.models.user import User
+from app.db.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +32,7 @@ def create_admin_user(db: Session) -> None:
     if admin:
         logger.info("Usuário admin já existe")
         return
-    
+
     # Criar usuário admin
     admin_user = User(
         email=settings.FIRST_ADMIN_EMAIL,
@@ -41,7 +42,7 @@ def create_admin_user(db: Session) -> None:
         is_active=True,
         is_admin=True,
     )
-    
+
     db.add(admin_user)
     db.commit()
     logger.info("Usuário admin criado com sucesso")

@@ -11,10 +11,11 @@ from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
 from app.db.base import get_db
-from app.db.models.study_plan import StudyPlan
-from app.db.models.user import User
+from app.db.models import StudyPlan, User
 from app.schemas.study_plan import (
     StudyPlan as StudyPlanSchema,
+)
+from app.schemas.study_plan import (
     StudyPlanCreate,
     StudyPlanUpdate,
 )
@@ -54,10 +55,10 @@ def create_study_plan(
     """
     # Definir data de início se não fornecida
     start_date = study_plan_in.start_date or datetime.utcnow()
-    
+
     # Calcular data de término
     end_date = start_date + timedelta(days=30 * study_plan_in.duration_months)
-    
+
     # Criar plano de estudos
     study_plan = StudyPlan(
         user_id=current_user.id,
@@ -93,13 +94,13 @@ def read_study_plan(
         StudyPlan.id == study_plan_id,
         StudyPlan.user_id == current_user.id
     ).first()
-    
+
     if not study_plan:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Plano de estudos não encontrado",
         )
-    
+
     return study_plan
 
 @router.put("/{study_plan_id}", response_model=StudyPlanSchema)
@@ -118,13 +119,13 @@ def update_study_plan(
         StudyPlan.id == study_plan_id,
         StudyPlan.user_id == current_user.id
     ).first()
-    
+
     if not study_plan:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Plano de estudos não encontrado",
         )
-    
+
     # Atualizar campos
     if study_plan_in.title is not None:
         study_plan.title = study_plan_in.title
@@ -148,9 +149,9 @@ def update_study_plan(
         study_plan.content = study_plan_in.content
     if study_plan_in.is_active is not None:
         study_plan.is_active = study_plan_in.is_active
-    
+
     study_plan.updated_at = datetime.utcnow()
-    
+
     db.add(study_plan)
     db.commit()
     db.refresh(study_plan)
@@ -170,13 +171,13 @@ def delete_study_plan(
         StudyPlan.id == study_plan_id,
         StudyPlan.user_id == current_user.id
     ).first()
-    
+
     if not study_plan:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Plano de estudos não encontrado",
         )
-    
+
     db.delete(study_plan)
     db.commit()
     return study_plan

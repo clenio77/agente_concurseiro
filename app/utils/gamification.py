@@ -5,9 +5,10 @@ Gerencia conquistas, badges, experiência, níveis e estatísticas do usuário.
 
 import json
 import os
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Tuple
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
+from datetime import datetime
+from typing import Dict, List, Optional
+
 
 @dataclass
 class Achievement:
@@ -55,19 +56,19 @@ class GamificationSystem:
         self.achievements_file = f"{self.user_data_path}/achievements.json"
         self.badges_file = f"{self.user_data_path}/badges.json"
         self.stats_file = f"{self.user_data_path}/stats.json"
-        
+
         # Criar diretório do usuário se não existir
         os.makedirs(self.user_data_path, exist_ok=True)
-        
+
         # Inicializar dados
         self.achievements = self._load_achievements()
         self.badges = self._load_badges()
         self.stats = self._load_stats()
-        
+
         # Definir conquistas disponíveis
         self.available_achievements = self._define_achievements()
         self.available_badges = self._define_badges()
-    
+
     def _define_achievements(self) -> List[Achievement]:
         """Define todas as conquistas disponíveis"""
         return [
@@ -207,7 +208,7 @@ class GamificationSystem:
                 max_progress=5
             )
         ]
-    
+
     def _define_badges(self) -> List[Badge]:
         """Define todos os badges disponíveis"""
         return [
@@ -284,7 +285,7 @@ class GamificationSystem:
                 requirements={"banca_expertise": {"CESPE": 20}}
             )
         ]
-    
+
     def _load_achievements(self) -> List[Achievement]:
         """Carrega conquistas do usuário"""
         try:
@@ -295,7 +296,7 @@ class GamificationSystem:
         except Exception as e:
             print(f"Erro ao carregar conquistas: {e}")
         return []
-    
+
     def _load_badges(self) -> List[Badge]:
         """Carrega badges do usuário"""
         try:
@@ -306,7 +307,7 @@ class GamificationSystem:
         except Exception as e:
             print(f"Erro ao carregar badges: {e}")
         return []
-    
+
     def _load_stats(self) -> Dict:
         """Carrega estatísticas do usuário"""
         default_stats = {
@@ -325,7 +326,7 @@ class GamificationSystem:
             "achievements_earned": 0,
             "badges_earned": 0
         }
-        
+
         try:
             if os.path.exists(self.stats_file):
                 with open(self.stats_file, 'r', encoding='utf-8') as f:
@@ -334,27 +335,27 @@ class GamificationSystem:
                     default_stats.update(data)
         except Exception as e:
             print(f"Erro ao carregar estatísticas: {e}")
-        
+
         return default_stats
-    
+
     def save_data(self):
         """Salva todos os dados do usuário"""
         try:
             # Salvar conquistas
             with open(self.achievements_file, 'w', encoding='utf-8') as f:
                 json.dump([asdict(a) for a in self.achievements], f, indent=2, ensure_ascii=False)
-            
+
             # Salvar badges
             with open(self.badges_file, 'w', encoding='utf-8') as f:
                 json.dump([asdict(b) for b in self.badges], f, indent=2, ensure_ascii=False)
-            
+
             # Salvar estatísticas
             with open(self.stats_file, 'w', encoding='utf-8') as f:
                 json.dump(self.stats, f, indent=2, ensure_ascii=False)
-                
+
         except Exception as e:
             print(f"Erro ao salvar dados: {e}")
-    
+
     def add_experience(self, points: int, activity: str = ""):
         """
         Adiciona pontos de experiência ao usuário e verifica se houve level up.
@@ -364,7 +365,7 @@ class GamificationSystem:
         old_level = self.stats["level"]
         self.stats["experience"] += points
         self.stats["total_points"] += points
-        
+
         # Calcular novo nível (100 XP por nível, aumentando 50 a cada nível)
         level = 1
         required_xp = 0
@@ -372,44 +373,49 @@ class GamificationSystem:
             required_xp += 100 + (level - 1) * 50
             if self.stats["experience"] >= required_xp:
                 level += 1
-        
+
         self.stats["level"] = level
-        
+
         # Verificar se subiu de nível
         if level > old_level:
             return self._level_up_reward(level)
-        
+
         return None
-    
+
     def _level_up_reward(self, new_level: int) -> Dict:
         """Recompensa por subir de nível"""
         bonus_points = new_level * 50
         self.stats["total_points"] += bonus_points
-        
+
         return {
             "type": "level_up",
             "new_level": new_level,
             "bonus_points": bonus_points,
             "message": f"🎉 Parabéns! Você subiu para o nível {new_level}!"
         }
-    
+
     def check_achievements(self, activity_data: Dict) -> List[Achievement]:
         """
         Verifica e atualiza conquistas do usuário com base em uma atividade realizada.
-        :param activity_data: Dicionário com dados da atividade (ex: tipo, progresso, pontuação).
+        :param activity_data: Dicionário com dados da atividade 
+        (ex: tipo, progresso, pontuação).
         :return: Lista de conquistas atualizadas.
         """
         new_achievements = []
-        
+
         for achievement_def in self.available_achievements:
             # Verificar se já foi conquistada
-            existing = next((a for a in self.achievements if a.id == achievement_def.id), None)
+            existing = next(
+                (a for a in self.achievements if a.id == achievement_def.id), None
+            )
             if existing and existing.is_earned:
                 continue
-            
+
             # Verificar progresso
-            progress = self._calculate_achievement_progress(achievement_def, activity_data)
-            
+            progress = self._calculate_achievement_progress(
+                achievement_def, activity_data
+            )
+
             if existing:
                 existing.progress = progress
                 if progress >= existing.max_progress and not existing.is_earned:
@@ -429,48 +435,50 @@ class GamificationSystem:
                     progress=progress,
                     max_progress=achievement_def.max_progress
                 )
-                
+
                 if progress >= new_achievement.max_progress:
                     new_achievement.is_earned = True
                     new_achievement.earned_date = datetime.now().isoformat()
                     new_achievements.append(new_achievement)
                     self.stats["achievements_earned"] += 1
-                
+
                 self.achievements.append(new_achievement)
-        
+
         return new_achievements
-    
-    def _calculate_achievement_progress(self, achievement: Achievement, activity_data: Dict) -> float:
+
+    def _calculate_achievement_progress(
+        self, achievement: Achievement, activity_data: Dict
+    ) -> float:
         """Calcula progresso de uma conquista específica"""
         if achievement.id == "first_login":
             return 1.0
-        
+
         elif achievement.id == "first_week":
             return min(self.stats.get("current_streak", 0), 7)
-        
+
         elif achievement.id.startswith("quiz_streak_"):
             target = int(achievement.id.split("_")[-1])
             return min(self.stats.get("current_streak", 0), target)
-        
+
         elif achievement.id.startswith("score_"):
             target_score = int(achievement.id.split("_")[-1])
             return 1.0 if self.stats.get("best_score", 0) >= target_score else 0.0
-        
+
         elif achievement.id.startswith("study_hours_"):
             target_hours = int(achievement.id.split("_")[-1])
             return min(self.stats.get("study_hours", 0), target_hours)
-        
+
         elif achievement.id == "all_subjects":
             return len(set(self.stats.get("subjects_studied", [])))
-        
+
         elif achievement.id == "improvement_streak":
             return activity_data.get("improvement_streak", 0)
-        
+
         elif achievement.id in ["early_bird", "night_owl"]:
             return activity_data.get(achievement.id, 0)
-        
+
         return 0.0
-    
+
     def update_activity(self, activity_type: str, data: Dict) -> Dict:
         """
         Atualiza estatísticas e progresso do usuário para um tipo de atividade.
@@ -483,64 +491,68 @@ class GamificationSystem:
             "level_up": None,
             "points_earned": 0
         }
-        
+
         # Atualizar estatísticas baseadas no tipo de atividade
         if activity_type == "daily_quiz":
             self.stats["daily_quizzes_completed"] += 1
-            self.stats["current_streak"] = data.get("streak", self.stats["current_streak"])
-            self.stats["max_streak"] = max(self.stats["max_streak"], self.stats["current_streak"])
+            self.stats["current_streak"] = data.get(
+                "streak", self.stats["current_streak"]
+            )
+            self.stats["max_streak"] = max(
+                self.stats["max_streak"], self.stats["current_streak"]
+            )
             points = 10 + (self.stats["current_streak"] * 2)  # Bonus por sequência
-            
+
         elif activity_type == "simulado":
             self.stats["simulados_completed"] += 1
             score = data.get("score", 0)
             self.stats["best_score"] = max(self.stats["best_score"], score)
             points = int(score / 10)  # 1 ponto por 10% de acerto
-            
+
             # Adicionar matérias estudadas
             subjects = data.get("subjects", [])
             for subject in subjects:
                 if subject not in self.stats["subjects_studied"]:
                     self.stats["subjects_studied"].append(subject)
-            
+
             # Adicionar banca praticada
             banca = data.get("banca")
             if banca and banca not in self.stats["bancas_practiced"]:
                 self.stats["bancas_practiced"].append(banca)
-        
+
         elif activity_type == "study_session":
             hours = data.get("hours", 0)
             self.stats["study_hours"] += hours
             points = int(hours * 20)  # 20 pontos por hora
-        
+
         else:
             points = data.get("points", 0)
-        
+
         # Adicionar experiência
         level_up = self.add_experience(points, activity_type)
         if level_up:
             results["level_up"] = level_up
-        
+
         results["points_earned"] = points
-        
+
         # Verificar conquistas
         activity_data = {**self.stats, **data}
         new_achievements = self.check_achievements(activity_data)
         results["new_achievements"] = new_achievements
-        
+
         # Adicionar pontos das conquistas
         for achievement in new_achievements:
             self.add_experience(achievement.points, f"achievement_{achievement.id}")
             results["points_earned"] += achievement.points
-        
+
         # Atualizar última atividade
         self.stats["last_activity"] = datetime.now().isoformat()
-        
+
         # Salvar dados
         self.save_data()
-        
+
         return results
-    
+
     def get_user_summary(self) -> Dict:
         """
         Retorna um resumo dos dados de gamificação do usuário para exibição no dashboard.
@@ -560,17 +572,19 @@ class GamificationSystem:
             "study_hours": self.stats["study_hours"],
             "best_score": self.stats["best_score"]
         }
-    
+
     def get_recent_achievements(self, limit: int = 5) -> List[Achievement]:
         """
         Retorna as conquistas mais recentes do usuário.
         :param limit: Quantidade máxima de conquistas a retornar.
         :return: Lista de conquistas recentes.
         """
-        earned_achievements = [a for a in self.achievements if a.is_earned and a.earned_date]
+        earned_achievements = [
+            a for a in self.achievements if a.is_earned and a.earned_date
+        ]
         earned_achievements.sort(key=lambda x: x.earned_date, reverse=True)
         return earned_achievements[:limit]
-    
+
     def get_progress_achievements(self) -> List[Achievement]:
         """
         Retorna conquistas em andamento (ainda não concluídas).
