@@ -34,3 +34,4 @@ temp/
 # Backup files
 backups/*.sql
 backups/*.gz
+.vercel

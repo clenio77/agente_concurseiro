@@ -1,18 +1,40 @@
 [server]
 port = 8501
+address = "0.0.0.0"
 headless = true
 enableCORS = false
 enableXsrfProtection = false
+maxUploadSize = 200
 
 [browser]
 gatherUsageStats = false
+showErrorDetails = true
 
 [theme]
-primaryColor = "#667eea"
-backgroundColor = "#ffffff"
-secondaryBackgroundColor = "#f0f2f6"
+primaryColor = "#FF6B6B"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F0F2F6"
 textColor = "#262730"
 font = "sans serif"
 
 [client]
+caching = true
+displayEnabled = true
 showErrorDetails = true
+
+[runner]
+magicEnabled = true
+installTracer = false
+fixMatplotlib = true
+
+[logger]
+level = "info"
+messageFormat = "%(asctime)s %(message)s"
+
+[deprecation]
+showfileUploaderEncoding = false
+showPyplotGlobalUse = false
+
+# Configurações específicas para Vercel
+[global]
+developmentMode = false

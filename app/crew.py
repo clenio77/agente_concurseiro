@@ -1,9 +1,9 @@
 
-from agents.mock_exam_agent import create_mock_exam_agent
-from agents.performance_prediction_agent import create_performance_prediction_agent
-from agents.search_agent import create_search_agent
-from agents.spaced_repetition_agent import create_spaced_repetition_agent
-from agents.study_plan_agent import create_study_plan_agent
+from app.agents.mock_exam_agent import create_mock_exam_agent
+from app.agents.performance_prediction_agent import create_performance_prediction_agent
+from app.agents.search_agent import create_search_agent
+from app.agents.spaced_repetition_agent import create_spaced_repetition_agent
+from app.agents.study_plan_agent import create_study_plan_agent
 from crewai import Crew, Process, Task
 
 
