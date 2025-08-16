@@ -1,0 +1,395 @@
+name: "Behavioral Analysis Feature Specification"
+version: "1.0"
+description: "Template para especificação de funcionalidades de análise comportamental"
+author: "Behavioral Analysis Agent"
+template_type: "feature_specification"
+
+metadata:
+  domain: "computer_vision_ml"
+  complexity: "very_high"
+  estimated_effort: "6-8 weeks"
+  dependencies: ["TensorFlow.js", "WebRTC", "Privacy Framework", "ML Pipeline"]
+  target_audience: ["ML Engineer", "Privacy Officer", "UX Researcher", "Developer"]
+
+sections:
+  - id: "overview"
+    title: "Visão Geral da Análise Comportamental"
+    elicit: true
+    instruction: |
+      Descreva o sistema de análise comportamental que será implementado:
+      - Objetivos educacionais específicos
+      - Benefícios para aprendizagem do candidato
+      - Diferenciação competitiva
+      - Alinhamento com missão do produto
+      - Considerações éticas fundamentais
+
+  - id: "privacy_framework"
+    title: "Framework de Privacidade"
+    elicit: true
+    instruction: |
+      **CRÍTICO**: Este deve ser o primeiro aspecto desenvolvido.
+      
+      ## Princípios Fundamentais
+      - Privacy by design obrigatório
+      - Consentimento informado granular
+      - Minimização de dados coletados
+      - Transparência total sobre uso
+      
+      ## Data Governance
+      - Que dados comportamentais serão coletados?
+      - Como será garantido anonimização?
+      - Políticas de retenção e deletion
+      - Controles de acesso e auditoria
+      
+      ## Legal Compliance
+      - LGPD compliance específico
+      - Direitos do titular dos dados
+      - Procedimentos de consentimento
+      - Documentação de conformidade
+      
+      ## User Controls
+      - Opt-in/opt-out granular
+      - Dashboard de privacidade
+      - Data export capabilities
+      - Real-time data deletion
+
+  - id: "behavioral_metrics"
+    title: "Métricas Comportamentais"
+    elicit: true
+    instruction: |
+      Defina quais comportamentos serão analisados:
+      
+      ## Attention Tracking
+      - Eye movement patterns
+      - Fixation duration analysis
+      - Attention heatmaps
+      - Focus distribution metrics
+      
+      ## Engagement Indicators
+      - Interaction frequency patterns
+      - Time-on-task analysis
+      - Help-seeking behavior
+      - Navigation patterns
+      
+      ## Cognitive Load Assessment
+      - Response time variance
+      - Error pattern analysis
+      - Hesitation indicators
+      - Multi-tasking detection
+      
+      ## Learning Effectiveness
+      - Retention correlation patterns
+      - Comprehension indicators
+      - Skill acquisition rates
+      - Knowledge transfer success
+
+  - id: "technical_architecture"
+    title: "Arquitetura Técnica"
+    elicit: true
+    instruction: |
+      Detalhe a arquitetura técnica completa:
+      
+      ## Computer Vision Stack
+      - TensorFlow.js models selection
+      - MediaPipe integration strategy
+      - WebRTC camera access patterns
+      - Canvas processing pipeline
+      
+      ## Data Processing Pipeline
+      - Real-time feature extraction
+      - Statistical aggregation methods
+      - Pattern recognition algorithms
+      - Insight generation frameworks
+      
+      ## Storage Architecture
+      - Local processing requirements
+      - Encrypted local storage
+      - Anonymous cloud aggregation
+      - Data lifecycle management
+      
+      ## Performance Optimization
+      - Real-time processing targets (<30ms)
+      - Memory usage constraints
+      - CPU utilization limits
+      - Battery impact minimization
+
+  - id: "ml_models"
+    title: "Modelos de Machine Learning"
+    elicit: true
+    instruction: |
+      Especifique os modelos de ML necessários:
+      
+      ## Computer Vision Models
+      - Face landmark detection model
+      - Eye tracking estimation model
+      - Emotion recognition model
+      - Attention detection model
+      
+      ## Behavioral Analysis Models
+      - Learning pattern recognition
+      - Engagement prediction
+      - Cognitive load estimation
+      - Performance correlation
+      
+      ## Model Training Strategy
+      - Training data requirements
+      - Validation methodologies
+      - Bias detection and mitigation
+      - Continuous learning approaches
+      
+      ## Model Deployment
+      - Client-side inference requirements
+      - Model size optimization
+      - Update mechanisms
+      - Fallback strategies
+
+  - id: "educational_insights"
+    title: "Insights Educacionais"
+    elicit: true
+    instruction: |
+      Defina como os dados comportamentais geram insights educacionais:
+      
+      ## Learning Optimization
+      - Optimal study session duration
+      - Best time of day for learning
+      - Effective break patterns
+      - Difficulty progression strategies
+      
+      ## Struggle Detection
+      - Early confusion indicators
+      - Frustration identification
+      - Cognitive overload warnings
+      - Disengagement alerts
+      
+      ## Personalization Triggers
+      - Learning style identification
+      - Content preference detection
+      - Pace adjustment triggers
+      - Support intervention points
+      
+      ## Success Prediction
+      - Performance improvement indicators
+      - Retention likelihood factors
+      - Achievement prediction models
+      - Risk assessment algorithms
+
+  - id: "implementation_phases"
+    title: "Fases de Implementação"
+    elicit: false
+    instruction: |
+      Plano detalhado de implementação em fases:
+      
+      ## Fase 1: Privacy Foundation (Semanas 1-2)
+      - [ ] Privacy framework implementation
+      - [ ] Consent management system
+      - [ ] Data governance policies
+      - [ ] Legal compliance validation
+      
+      ## Fase 2: Basic Tracking (Semanas 3-4)
+      - [ ] WebRTC camera access setup
+      - [ ] Basic engagement metrics
+      - [ ] Local data processing
+      - [ ] Privacy controls interface
+      
+      ## Fase 3: Computer Vision (Semanas 5-6)
+      - [ ] TensorFlow.js integration
+      - [ ] Face landmark detection
+      - [ ] Eye tracking estimation
+      - [ ] Attention heatmap generation
+      
+      ## Fase 4: ML Insights (Semanas 7-8)
+      - [ ] Learning pattern analysis
+      - [ ] Behavioral correlation models
+      - [ ] Personalization algorithms
+      - [ ] Predictive analytics
+      
+      ## Fase 5: Integration & Optimization
+      - [ ] System integration testing
+      - [ ] Performance optimization
+      - [ ] Accessibility validation
+      - [ ] User acceptance testing
+
+  - id: "user_experience"
+    title: "Experiência do Usuário"
+    elicit: true
+    instruction: |
+      Projete a experiência completa do usuário:
+      
+      ## Onboarding Process
+      - Privacy education e consent
+      - Camera setup e calibration
+      - Feature demonstration
+      - Benefits explanation
+      
+      ## Real-time Feedback
+      - Non-intrusive visual indicators
+      - Progress monitoring displays
+      - Achievement notifications
+      - Optimization suggestions
+      
+      ## Insights Dashboard
+      - Personal learning analytics
+      - Behavioral pattern visualization
+      - Improvement recommendations
+      - Historical trend analysis
+      
+      ## Privacy Controls
+      - Granular permission settings
+      - Real-time data monitoring
+      - Easy opt-out mechanisms
+      - Data deletion capabilities
+
+  - id: "ethical_considerations"
+    title: "Considerações Éticas"
+    elicit: true
+    instruction: |
+      Aborde todos os aspectos éticos críticos:
+      
+      ## Algorithmic Fairness
+      - Bias detection across demographics
+      - Fairness metrics definition
+      - Discrimination prevention
+      - Inclusive design principles
+      
+      ## Transparency
+      - Explainable AI requirements
+      - User understanding of algorithms
+      - Clear benefit communication
+      - Open methodology disclosure
+      
+      ## Beneficence
+      - Positive learning impact focus
+      - Harm prevention strategies
+      - Vulnerable population protection
+      - Psychological well-being consideration
+      
+      ## Autonomy
+      - User control maximization
+      - Informed decision making
+      - No coercive elements
+      - Dignity preservation
+
+  - id: "integration_points"
+    title: "Pontos de Integração"
+    elicit: true
+    instruction: |
+      Identifique todas as integrações necessárias:
+      
+      ## System Integration
+      - Streamlit component integration
+      - FastAPI backend connection
+      - Database schema extensions
+      - Analytics pipeline integration
+      
+      ## AI System Integration
+      - CrewAI agent enhancements
+      - ML model deployment
+      - Real-time inference pipeline
+      - Prediction model integration
+      
+      ## Gamification Integration
+      - Achievement system enhancement
+      - Progress tracking augmentation
+      - Personalized reward systems
+      - Social feature integration
+      
+      ## External Services
+      - Cloud ML services (optional)
+      - Analytics platforms
+      - Monitoring systems
+      - Compliance reporting tools
+
+  - id: "testing_validation"
+    title: "Testes e Validação"
+    elicit: true
+    instruction: |
+      Estratégia completa de testes e validação:
+      
+      ## Technical Testing
+      - Computer vision accuracy
+      - Real-time performance
+      - Privacy protection validation
+      - Cross-platform compatibility
+      
+      ## Ethical Testing
+      - Bias detection across demographics
+      - Fairness algorithm validation
+      - Consent process effectiveness
+      - Transparency assessment
+      
+      ## Educational Effectiveness
+      - Learning improvement measurement
+      - Insight accuracy validation
+      - Personalization effectiveness
+      - User behavior correlation
+      
+      ## User Acceptance
+      - Privacy comfort assessment
+      - Feature value perception
+      - Usability evaluation
+      - Long-term engagement impact
+
+  - id: "success_metrics"
+    title: "Métricas de Sucesso"
+    elicit: false
+    instruction: |
+      Métricas específicas para avaliar sucesso:
+      
+      ## Technical Performance
+      - Computer vision accuracy: >90%
+      - Real-time processing: <50ms latency
+      - Privacy compliance: 100% coverage
+      - System reliability: >99.5% uptime
+      
+      ## Educational Impact
+      - Learning improvement: +20% performance
+      - Engagement increase: +25% session time
+      - Retention improvement: +15% knowledge retention
+      - Personalization effectiveness: >80% relevance
+      
+      ## User Adoption
+      - Feature opt-in rate: >40%
+      - Privacy satisfaction: >4.5/5 rating
+      - Continued usage: >70% retention after 30 days
+      - Support tickets: <1% of behavioral features
+      
+      ## Ethical Compliance
+      - Zero privacy violations
+      - Zero discrimination incidents
+      - 100% transparency compliance
+      - Positive ethical audit results
+
+workflow:
+  creation_process:
+    1. "Privacy framework development (FIRST PRIORITY)"
+    2. "Behavioral metrics definition with educators"
+    3. "Technical architecture with ML engineers"
+    4. "Ethical review with compliance team"
+    5. "Implementation planning with developers"
+    6. "User experience design with UX team"
+    7. "Testing strategy with QA specialists"
+
+validation_criteria:
+  privacy_compliance:
+    - "LGPD full compliance documented"
+    - "Privacy by design implemented"
+    - "User consent mechanisms robust"
+    - "Data governance policies complete"
+  
+  technical_feasibility:
+    - "Real-time processing achievable"
+    - "Browser compatibility validated"
+    - "Performance targets realistic"
+    - "ML models deployment ready"
+  
+  educational_value:
+    - "Clear learning benefit articulated"
+    - "Actionable insights defined"
+    - "Personalization value demonstrated"
+    - "Educational effectiveness measurable"
+  
+  ethical_soundness:
+    - "Algorithmic fairness ensured"
+    - "Transparency requirements met"
+    - "User autonomy preserved"
+    - "Potential harms mitigated"

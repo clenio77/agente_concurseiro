@@ -1,209 +1,124 @@
-# Arquivos desnecessários para Vercel
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
-env/
-venv/
-.venv/
-pip-log.txt
-pip-delete-this-directory.txt
-.tox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.log
-.git/
-.mypy_cache/
-.pytest_cache/
-.hypothesis/
-
-# Arquivos locais
-data/
-logs/
-backups/
-*.db
-*.sqlite
-*.sqlite3
-
-# Arquivos de desenvolvimento
-.env.local
-.env.development
-debug_*.py
-test_*.py
-tests/
-
-# Arquivos grandes
-*.tar.gz
-*.zip
-*.pdf
-
-# Arquivos específicos do projeto
-app.db
-agente-concurseiro-*.tar.gz
-requirements-dev.txt
-docker-compose.yml
-Dockerfile
-
-# Arquivos de backup e temporários
-*.bak
-*.tmp
-*.temp
-*~
-
-# Arquivos do sistema
-.DS_Store
-Thumbs.db
-
-# Arquivos do IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Arquivos de documentação desnecessários
-docs/
-documentation/
-*.md
-!README.md
-
-# Arquivos de configuração local
-.env
-.env.local
-config.local.py
-
-# Arquivos de build
-build/
-dist/
-*.egg-info/
-
-# Arquivos de node (se houver)
+# Dependências de desenvolvimento
 node_modules/
-package-lock.json
-yarn.lock
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# Arquivos específicos que podem ser grandes
-app/data/
-app/logs/
-app/backups/
-app/temp/
-
-# Remover arquivos de exemplo e testes
-examples/
-samples/
-demo/
-
-# Arquivos de migração (não necessários no Vercel)
-migrations/
-alembic/
-
-# Arquivos de configuração de desenvolvimento
-pytest.ini
-tox.ini
-setup.cfg
-pyproject.toml
-
-# Arquivos de análise de código
-.flake8
-.pylintrc
-mypy.ini
-
-# Arquivos de CI/CD
-.github/
-.gitlab-ci.yml
-.travis.yml
-circle.yml
-
-# Arquivos específicos do projeto que são grandes
-app/models/large_models/
-app/assets/large_files/
-
-# Arquivos de cache do Python
-*.pyc
-*.pyo
-*.pyd
-__pycache__/
-.Python
-build/
-develop-eggs/
+# Arquivos de build local
+.next/
+out/
 dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
 
-# Arquivos de log
-*.log
-logs/
-
-# Arquivos de backup do editor
-*~
-*.swp
-*.swo
-.vscode/
-.idea/
-
-# Arquivos temporários do sistema
-.DS_Store
-Thumbs.db
-
-# Arquivos de ambiente virtual
-venv/
-env/
-ENV/
-env.bak/
-venv.bak/
+# Arquivos de teste
+coverage/
+.nyc_output/
+*.test.js
+*.test.ts
+*.spec.js
+*.spec.ts
 
 # Arquivos de configuração local
-.env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
-# Arquivos de teste
-test_*.py
-*_test.py
-tests/
-testing/
+# Logs
+logs/
+*.log
+
+# Arquivos temporários
+.tmp/
+.temp/
+*.tmp
+*.temp
+
+# Arquivos de IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
+
+# Arquivos de backup
+*.bak
+*.backup
+*.old
 
 # Arquivos de documentação
 docs/
-documentation/
 *.md
-!README.md
-!README_VERCEL.md
+README*
 
 # Arquivos de exemplo
 examples/
 samples/
-demo/
 
-# Arquivos de migração
-migrations/
-alembic/
+# Arquivos de debug
+debug/
+*.debug
+
+# Arquivos de cache
+.cache/
+.parcel-cache/
 
 # Arquivos de análise
-.coverage
-.pytest_cache/
-.mypy_cache/
-.hypothesis/
+bundle-analyzer/
+webpack-bundle-analyzer/
 
-# Arquivos específicos do projeto
-init_database.py
-test_informacoes_basicas.py
-VERCEL_DEPLOYMENT_GUIDE.md
-deploy-vercel.sh
-requirements-original.txt
+# Arquivos de coverage
+.nyc_output/
+coverage/
+
+# Arquivos de teste
+__tests__/
+tests/
+test/
+
+# Arquivos de configuração local
+.eslintrc.local
+.prettierrc.local
+
+# Arquivos de lock
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Arquivos de ambiente
+.env*
+!.env.example
+
+# Arquivos de build
+build/
+dist/
+out/
+
+# Arquivos de cache do Next.js
+.next/
+out/
+
+# Arquivos de análise
+.vercel/
+.vercelignore
+
+# Arquivos de deploy
+deploy/
+deployment/
+
+# Arquivos de backup
+backups/
+*.backup
+
+# Arquivos de log
+logs/
+*.log
+
+# Arquivos temporários
+tmp/
+temp/
+*.tmp
+*.temp

@@ -1,0 +1,1 @@
+# Testes dos componentes principais do sistema

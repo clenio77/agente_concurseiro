@@ -1,0 +1,1 @@
+# Testes específicos para análise de editais

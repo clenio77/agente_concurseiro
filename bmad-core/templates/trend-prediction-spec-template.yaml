@@ -1,0 +1,429 @@
+name: "Trend Prediction System Specification"
+version: "1.0"
+description: "Template para especificação do sistema de predição de tendências de concursos"
+author: "Trend Prediction Agent"
+template_type: "feature_specification"
+
+metadata:
+  domain: "big_data_ml_market_intelligence"
+  complexity: "very_high"
+  estimated_effort: "8-10 weeks"
+  dependencies: ["Big Data Pipeline", "ML Models", "Web Scraping", "Market APIs"]
+  target_audience: ["Data Engineer", "ML Engineer", "Product Manager", "Market Analyst"]
+
+sections:
+  - id: "market_overview"
+    title: "Visão Geral do Mercado de Concursos"
+    elicit: true
+    instruction: |
+      Descreva o contexto do mercado brasileiro de concursos:
+      - Tamanho e características do mercado
+      - Principais players (bancas examinadoras)
+      - Padrões sazonais e cíclicos
+      - Fatores econômicos e políticos influenciadores
+      - Oportunidades de diferenciação competitiva
+
+  - id: "data_sources"
+    title: "Fontes de Dados"
+    elicit: true
+    instruction: |
+      Identifique e especifique todas as fontes de dados necessárias:
+      
+      ## Fontes Governamentais
+      - Portal Nacional de Contratações Públicas (PNCP)
+      - Diário Oficial da União (DOU)
+      - Portais estaduais e municipais
+      - Sites de tribunais e órgãos de controle
+      - IBGE para dados demográficos
+      
+      ## Bancas Examinadoras
+      - CESPE/UnB historical data
+      - FCC pattern analysis
+      - VUNESP regional trends
+      - FGV market positioning
+      - IBFC growth patterns
+      
+      ## Market Intelligence
+      - Social media sentiment
+      - Search trends (Google Trends)
+      - Competition analysis
+      - Salary benchmarking
+      - Geographic distribution
+      
+      ## External APIs
+      - Government open data APIs
+      - News aggregation services
+      - Economic indicators APIs
+      - Social media APIs
+
+  - id: "data_pipeline"
+    title: "Pipeline de Dados"
+    elicit: true
+    instruction: |
+      Projete o pipeline completo de dados:
+      
+      ## Data Ingestion
+      - Web scraping strategies
+      - API integration methods
+      - Real-time data streaming
+      - Batch processing schedules
+      
+      ## Data Processing
+      - Text preprocessing e NLP
+      - Data cleaning e validation
+      - Feature engineering
+      - Data normalization
+      
+      ## Data Storage
+      - Raw data lake architecture
+      - Processed data warehouse
+      - Time-series databases
+      - Graph databases para relationships
+      
+      ## Data Quality
+      - Validation rules
+      - Anomaly detection
+      - Data lineage tracking
+      - Quality metrics monitoring
+
+  - id: "prediction_models"
+    title: "Modelos de Predição"
+    elicit: true
+    instruction: |
+      Especifique os modelos de machine learning necessários:
+      
+      ## Temporal Forecasting
+      - ARIMA para séries temporais
+      - Prophet para sazonalidade
+      - LSTM para padrões complexos
+      - Ensemble methods para robustez
+      
+      ## Content Analysis
+      - Topic modeling (LDA, BERT)
+      - Sentiment analysis
+      - Trend detection algorithms
+      - Similarity matching
+      
+      ## Market Dynamics
+      - Supply-demand modeling
+      - Competition analysis
+      - Economic correlation
+      - Geographic distribution
+      
+      ## Model Training
+      - Training data requirements
+      - Cross-validation strategies
+      - Hyperparameter optimization
+      - Model evaluation metrics
+
+  - id: "prediction_categories"
+    title: "Categorias de Predição"
+    elicit: true
+    instruction: |
+      Defina as diferentes categorias de predições oferecidas:
+      
+      ## Timing Predictions
+      - Quando novos editais serão publicados
+      - Cronogramas de processo seletivo
+      - Sazonalidade por órgão/banca
+      - Influência de eventos externos
+      
+      ## Content Predictions
+      - Tópicos emergentes em provas
+      - Mudanças em formatos de questão
+      - Evolução de competências exigidas
+      - Tendências em critérios de avaliação
+      
+      ## Market Predictions
+      - Número de vagas por setor
+      - Níveis de competitividade
+      - Atratividade por região
+      - Evolução salarial
+      
+      ## Opportunity Scoring
+      - Score de oportunidade por edital
+      - Ranking de atratividade
+      - Análise de fit com perfil candidato
+      - ROI de preparação
+
+  - id: "competitive_intelligence"
+    title: "Inteligência Competitiva"
+    elicit: true
+    instruction: |
+      Sistema de inteligência competitiva avançada:
+      
+      ## Market Positioning
+      - Análise de nichos de mercado
+      - Identificação de gaps
+      - Benchmarking competitivo
+      - Blue ocean opportunities
+      
+      ## Strategic Insights
+      - Timing ideal para preparação
+      - Allocation de recursos de estudo
+      - Portfolio de concursos
+      - Risk management strategies
+      
+      ## Candidate Optimization
+      - Personalized opportunity ranking
+      - Study prioritization matrix
+      - Career progression paths
+      - Network effect analysis
+      
+      ## Market Disruption Detection
+      - Early warning indicators
+      - Paradigm shift identification
+      - Technology impact assessment
+      - Regulatory change implications
+
+  - id: "user_personalization"
+    title: "Personalização para Usuários"
+    elicit: true
+    instruction: |
+      Como as predições serão personalizadas:
+      
+      ## User Profile Analysis
+      - Educational background
+      - Professional experience
+      - Geographic preferences
+      - Career aspirations
+      - Risk tolerance
+      
+      ## Recommendation Engine
+      - Personalized opportunity scoring
+      - Study plan optimization
+      - Timeline recommendations
+      - Resource allocation advice
+      
+      ## Adaptive Learning
+      - User behavior tracking
+      - Prediction accuracy feedback
+      - Model personalization
+      - Preference evolution
+      
+      ## Goal Alignment
+      - Short-term vs long-term goals
+      - Career progression alignment
+      - Work-life balance factors
+      - Financial considerations
+
+  - id: "visualization_dashboard"
+    title: "Dashboard de Visualização"
+    elicit: true
+    instruction: |
+      Projete dashboards interativos para apresentar insights:
+      
+      ## Executive Dashboard
+      - Market overview heatmaps
+      - Trend timeline visualizations
+      - Key metrics summaries
+      - Alert notifications
+      
+      ## Analytical Dashboard
+      - Detailed prediction charts
+      - Confidence intervals
+      - Historical accuracy tracking
+      - Model performance metrics
+      
+      ## User Dashboard
+      - Personalized opportunity maps
+      - Recommendation cards
+      - Progress tracking
+      - Goal achievement monitoring
+      
+      ## Interactive Features
+      - Drill-down capabilities
+      - Filter and search functions
+      - Comparison tools
+      - Export capabilities
+
+  - id: "alert_system"
+    title: "Sistema de Alertas"
+    elicit: true
+    instruction: |
+      Sistema proativo de alertas e notificações:
+      
+      ## Alert Categories
+      - New edital predictions
+      - Market shift notifications
+      - Opportunity score changes
+      - Deadline reminders
+      
+      ## Alert Triggers
+      - Prediction confidence thresholds
+      - Market volatility indicators
+      - User preference matches
+      - Time-sensitive opportunities
+      
+      ## Delivery Channels
+      - In-app notifications
+      - Email alerts
+      - SMS for urgent updates
+      - Push notifications
+      
+      ## Customization
+      - User preference settings
+      - Frequency controls
+      - Channel selection
+      - Alert priority levels
+
+  - id: "accuracy_validation"
+    title: "Validação de Precisão"
+    elicit: true
+    instruction: |
+      Estratégias para validar e melhorar precisão das predições:
+      
+      ## Evaluation Metrics
+      - Prediction accuracy rates
+      - Timing precision (MAPE)
+      - Content relevance scores
+      - User satisfaction metrics
+      
+      ## Backtesting
+      - Historical validation (5+ years)
+      - Cross-validation across regions
+      - Seasonal adjustment testing
+      - Economic cycle robustness
+      
+      ## Continuous Improvement
+      - Real-time feedback loops
+      - Model retraining schedules
+      - Feature engineering updates
+      - Algorithm optimization
+      
+      ## Quality Assurance
+      - Human expert validation
+      - Outlier detection
+      - Bias monitoring
+      - Ethical considerations
+
+  - id: "implementation_roadmap"
+    title: "Roadmap de Implementação"
+    elicit: false
+    instruction: |
+      Plano detalhado de implementação:
+      
+      ## Fase 1: Data Infrastructure (Semanas 1-2)
+      - [ ] Web scraping setup
+      - [ ] API integrations
+      - [ ] Data storage architecture
+      - [ ] Quality assurance pipeline
+      
+      ## Fase 2: Basic Predictions (Semanas 3-4)
+      - [ ] Time series forecasting
+      - [ ] Simple trend detection
+      - [ ] Basic visualization
+      - [ ] Alert system foundation
+      
+      ## Fase 3: Advanced Analytics (Semanas 5-6)
+      - [ ] Content analysis models
+      - [ ] Market intelligence
+      - [ ] Competitive analysis
+      - [ ] Advanced visualizations
+      
+      ## Fase 4: Personalization (Semanas 7-8)
+      - [ ] User profiling system
+      - [ ] Recommendation engine
+      - [ ] Personalized dashboards
+      - [ ] Adaptive algorithms
+      
+      ## Fase 5: Optimization (Semanas 9-10)
+      - [ ] Performance optimization
+      - [ ] Accuracy improvements
+      - [ ] User experience refinement
+      - [ ] Production deployment
+
+  - id: "integration_points"
+    title: "Pontos de Integração"
+    elicit: true
+    instruction: |
+      Integração com o sistema existente:
+      
+      ## System Integration
+      - Study plan optimization
+      - Content recommendation enhancement
+      - Gamification system integration
+      - User profile augmentation
+      
+      ## AI Agent Integration
+      - CrewAI agent enhancement
+      - Prediction model deployment
+      - Real-time inference
+      - Context-aware recommendations
+      
+      ## Data Integration
+      - User behavior data
+      - Performance analytics
+      - Historical study data
+      - Achievement tracking
+      
+      ## External Integration
+      - Government data sources
+      - Third-party APIs
+      - Social media platforms
+      - News aggregation services
+
+  - id: "success_metrics"
+    title: "Métricas de Sucesso"
+    elicit: false
+    instruction: |
+      KPIs para avaliar sucesso do sistema:
+      
+      ## Prediction Accuracy
+      - Edital timing accuracy: >80%
+      - Content prediction relevance: >75%
+      - Market trend identification: >85%
+      - User satisfaction with predictions: >4.0/5
+      
+      ## Business Impact
+      - User engagement increase: +30%
+      - Study plan effectiveness: +25%
+      - Approval rate improvement: +20%
+      - User retention: +40%
+      
+      ## Technical Performance
+      - Data pipeline reliability: >99%
+      - Model inference time: <500ms
+      - System availability: >99.5%
+      - Data freshness: <4 hours delay
+      
+      ## User Adoption
+      - Feature usage rate: >60%
+      - Alert engagement: >40%
+      - Dashboard usage: >70%
+      - Recommendation acceptance: >50%
+
+workflow:
+  creation_process:
+    1. "Market research e data source identification"
+    2. "Data pipeline architecture design"
+    3. "ML model selection e training strategy"
+    4. "Visualization e UX design"
+    5. "Integration planning com existing system"
+    6. "Implementation roadmap detailing"
+    7. "Success metrics definition"
+
+validation_criteria:
+  data_quality:
+    - "Comprehensive data sources identified"
+    - "Data quality assurance implemented"
+    - "Real-time processing capability"
+    - "Scalable storage architecture"
+  
+  model_effectiveness:
+    - "Appropriate algorithms selected"
+    - "Training data sufficiency"
+    - "Validation methodology robust"
+    - "Continuous improvement plan"
+  
+  business_value:
+    - "Clear value proposition"
+    - "Actionable insights generated"
+    - "User needs addressed"
+    - "Competitive advantage created"
+  
+  technical_feasibility:
+    - "Implementation plan realistic"
+    - "Resource requirements identified"
+    - "Performance targets achievable"
+    - "Integration complexity manageable"

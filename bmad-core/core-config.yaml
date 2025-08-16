@@ -1,0 +1,88 @@
+# BMad-Core Configuration for Agente Concurseiro v2.0
+# Este arquivo configura o framework BMad-Method para o projeto Agente Concurseiro
+
+project:
+  name: "Agente Concurseiro"
+  version: "2.0"
+  description: "Plataforma IA para preparação de concursos públicos"
+  domain: "educational-technology"
+
+# Configuração de documentos do projeto
+prd:
+  version: "v4"
+  sharded: true
+  location: "docs/prd.md"
+  shardedLocation: "docs/prd"
+  epicFilePattern: "epic-{n}*.md"
+
+architecture:
+  version: "v4"
+  sharded: true
+  location: "docs/architecture.md"
+  shardedLocation: "docs/architecture"
+
+# Arquivos que o agente dev deve sempre carregar
+devLoadAlwaysFiles:
+  - "app/core/config.py"
+  - "app/db/models.py" 
+  - "app/schemas/"
+  - "requirements.txt"
+  - "pyproject.toml"
+
+# Configurações de debug e logging
+devDebugLog: "logs/dev-agent-debug.log"
+agentCoreDump: "logs/agent-conversations"
+
+# Configurações específicas do projeto
+project_specific:
+  main_technologies:
+    - "Python 3.11+"
+    - "FastAPI"
+    - "Streamlit" 
+    - "CrewAI"
+    - "SQLAlchemy"
+    - "PostgreSQL/SQLite"
+  
+  deployment:
+    platforms:
+      - "Vercel"
+      - "Docker"
+    
+  testing:
+    framework: "pytest"
+    coverage_target: "95%"
+  
+  ai_integration:
+    providers:
+      - "OpenAI GPT-4"
+      - "Google Gemini"
+    
+  key_features:
+    - "Gamificação"
+    - "Analytics Preditivo"
+    - "Assistente de Voz"
+    - "Realidade Aumentada"
+    - "Análise Comportamental"
+    - "Predição de Tendências"
+
+# Status atual do desenvolvimento
+development_status:
+  phase_1_foundation: "100%"
+  phase_2_intelligence: "100%"
+  phase_3_innovation: "25%"
+  overall_completion: "85%"
+
+# Próximas prioridades de implementação
+next_priorities:
+  high:
+    - "Voice Assistant completion"
+    - "Behavioral Analysis implementation"
+    - "Test coverage improvement"
+  medium:
+    - "Trend Prediction features"
+    - "Performance optimization"
+    - "API integrations"
+  low:
+    - "Mobile app development"
+    - "Advanced analytics"
+    - "Social features"
