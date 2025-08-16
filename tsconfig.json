@@ -24,11 +24,7 @@
       "@/components/*": ["./app/components/*"],
       "@/lib/*": ["./app/lib/*"],
       "@/types/*": ["./app/types/*"],
-      "@/utils/*": ["./app/utils/*"],
-      "@/hooks/*": ["./app/hooks/*"],
-      "@/stores/*": ["./app/stores/*"],
-      "@/styles/*": ["./app/styles/*"],
-      "@/constants/*": ["./app/constants/*"]
+      "@/api/*": ["./app/api/*"]
     },
     "forceConsistentCasingInFileNames": true,
     "noImplicitReturns": true,
@@ -45,22 +41,6 @@
     "strictBindCallApply": true,
     "strictPropertyInitialization": true
   },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts",
-    "app/**/*.ts",
-    "app/**/*.tsx"
-  ],
-  "exclude": [
-    "node_modules",
-    ".next",
-    "out",
-    "dist",
-    "build",
-    "coverage",
-    "*.config.js",
-    "*.config.ts"
-  ]
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
 }
