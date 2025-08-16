@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { RotateCcw, Check, X, Eye, EyeOff } from 'lucide-react'
-import { cn } from '../../lib/utils/cn'
+import { cn } from '@/lib/utils/cn'
 
 interface FlashcardData {
   id: string

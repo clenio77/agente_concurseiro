@@ -3,7 +3,7 @@
 import React from 'react'
 import { Card, CardContent } from '@/components/ui/Card'
 import { Trophy, Lock, Star, Target, BookOpen, Brain, Zap } from 'lucide-react'
-import { cn } from '../../lib/utils/cn'
+import { cn } from '@/lib/utils/cn'
 
 interface AchievementData {
   id: string

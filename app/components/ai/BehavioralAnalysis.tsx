@@ -5,8 +5,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Progress } from '@/components/ui/Progress'
 import { Brain, TrendingUp, Target, Clock, BarChart3, Lightbulb, Zap } from 'lucide-react'
-import { cn } from '../../lib/utils/cn'
-import { mockBehavioralPatterns, mockLearningInsights } from '../../data/mockData'
+import { cn } from '@/lib/utils/cn'
+import { mockBehavioralPatterns, mockLearningInsights } from '@/data/mockData'
 
 interface BehavioralPattern {
   id: string

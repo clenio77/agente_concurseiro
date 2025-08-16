@@ -5,8 +5,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Progress } from '@/components/ui/Progress'
 import { Trophy, Star, Target, Clock, Gift, Users, Calendar } from 'lucide-react'
-import { cn } from '../../lib/utils/cn'
-import { mockMissions, mockEvents, mockLeaderboard } from '../../data/mockData'
+import { cn } from '@/lib/utils/cn'
+import { mockMissions, mockEvents, mockLeaderboard } from '@/data/mockData'
 
 interface Mission {
   id: string

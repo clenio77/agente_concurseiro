@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Select } from '@/components/ui/Select'
 import { Camera, Eye, EyeOff, Target, Zap, BookOpen, Brain, Globe } from 'lucide-react'
-import { cn } from '../../lib/utils/cn'
+import { cn } from '@/lib/utils/cn'
 
 interface ARExperience {
   id: string
