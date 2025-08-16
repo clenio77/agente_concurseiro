@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Mic, MicOff, Volume2, VolumeX, Brain, MessageSquare } from 'lucide-react'
-import { cn } from '@/lib/utils/cn'
+import { cn } from '../../lib/utils/cn'
 
 interface VoiceCommand {
   id: string

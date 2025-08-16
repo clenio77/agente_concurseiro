@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Radio } from '@/components/ui/Radio'
 import { CheckCircle, XCircle, ArrowRight, Timer } from 'lucide-react'
-import { cn } from '@/lib/utils/cn'
+import { cn } from '../../lib/utils/cn'
 
 interface QuizQuestion {
   id: string

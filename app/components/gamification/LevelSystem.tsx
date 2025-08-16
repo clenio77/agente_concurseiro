@@ -3,7 +3,7 @@
 import React from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card'
 import { Star, Trophy, Target, Zap } from 'lucide-react'
-import { cn } from '@/lib/utils/cn'
+import { cn } from '../../lib/utils/cn'
 
 interface LevelData {
   currentLevel: number

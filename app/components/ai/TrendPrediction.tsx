@@ -4,8 +4,8 @@ import React, { useState, useEffect } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Brain, TrendingUp, BarChart3 } from 'lucide-react'
-import { cn } from '@/lib/utils/cn'
-import { mockTrendPredictions, mockMarketTrends, mockLearningPredictions } from '@/data/mockData'
+import { cn } from '../../lib/utils/cn'
+import { mockTrendPredictions, mockMarketTrends, mockLearningPredictions } from '../../data/mockData'
 
 interface TrendPrediction {
   id: string
