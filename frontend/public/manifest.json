@@ -1,0 +1,100 @@
+{
+  "name": "Mentor de Concursos",
+  "short_name": "Mentor Concursos",
+  "description": "Seu assistente inteligente para preparação de concursos públicos",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Análise de Edital",
+      "short_name": "Análise",
+      "description": "Analise editais de concursos",
+      "url": "/analise_edital",
+      "icons": [{ "src": "/icons/analise.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Questionário",
+      "short_name": "Quiz",
+      "description": "Faça questões para estudar",
+      "url": "/questionario",
+      "icons": [{ "src": "/icons/quiz.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Plano de Estudo",
+      "short_name": "Plano",
+      "description": "Crie seu plano de estudos",
+      "url": "/plano_estudo",
+      "icons": [{ "src": "/icons/plano.png", "sizes": "96x96" }]
+    }
+  ],
+  "categories": ["education", "productivity", "utilities"],
+  "lang": "pt-BR",
+  "scope": "/",
+  "screenshots": [
+    {
+      "src": "/screenshots/desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/screenshots/mobile.png",
+      "sizes": "360x640",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ]
+}
